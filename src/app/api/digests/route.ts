@@ -17,25 +17,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data);
   }
 
-  let query = supabaseAdmin
-    .from("workspace_files")
-    .select("file_path, file_name, size_bytes, updated_at");
+  let data;
+  let error;
 
   if (search) {
-    query = query
-      .select("file_path, file_name, content, size_bytes, updated_at") // Include content in the select clause for search
+    const searchQuery = supabaseAdmin
+      .from("workspace_files")
+      .select("file_path, file_name, content, size_bytes, updated_at")
       .textSearch("content", search, { type: "websearch" })
       .order("rank", { ascending: false });
-  } else {
-    query = query.order("file_name", { ascending: false });
-  }
 
-  const { data, error } = await query;
+    ({ data, error } = await searchQuery);
+  } else {
+    const noSearchQuery = supabaseAdmin
+      .from("workspace_files")
+      .select("file_path, file_name, size_bytes, updated_at")
+      .order("file_name", { ascending: false });
+
+    ({ data, error } = await noSearchQuery);
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (search && data) {
-    const resultsWithSnippets = data.map((digest) => {
+    const resultsWithSnippets = data.map((digest: any) => {
       const regex = new RegExp(search, "gi");
       let matchIndex = digest.content.search(regex);
       let snippetStart = Math.max(0, matchIndex - 75);
@@ -43,7 +48,7 @@ export async function GET(req: NextRequest) {
       let snippet = digest.content.substring(snippetStart, snippetEnd);
 
       // Ensure the search term is highlighted in the snippet
-      snippet = snippet.replace(regex, (match) => `<strong>${match}</strong>`);
+      snippet = snippet.replace(regex, (match: string) => `<strong>${match}</strong>`);
 
       return {
         ...digest,
