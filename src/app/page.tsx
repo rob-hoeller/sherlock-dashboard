@@ -78,6 +78,9 @@ export default function Home() {
     }
   };
 
+  if (loading) return <Loading />;
+  if (!data.length) return <Empty msg="No usage data found for selected range." />;
+
   const byDay: Record<string, number> = {};
   for (const e of data) {
     byDay[e.summary_date] = (byDay[e.summary_date] || 0) + e.total_cost;
@@ -140,55 +143,47 @@ export default function Home() {
         </div>
       </div>
 
-      {loading ? (
-        <Loading />
-      ) : data.length > 0 ? (
-        <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} />
-            <StatCard label="API Calls" value={totalCalls.toLocaleString()} />
-            <StatCard label="Input Tokens" value={fmt(totalInput)} />
-            <StatCard label="Output Tokens" value={fmt(totalOutput)} />
-          </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} />
+        <StatCard label="API Calls" value={totalCalls.toLocaleString()} />
+        <StatCard label="Input Tokens" value={fmt(totalInput)} />
+        <StatCard label="Output Tokens" value={fmt(totalOutput)} />
+      </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-              <h2 className="text-sm font-medium text-zinc-400 mb-4">Daily Cost</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dailyData}>
-                  <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
-                  <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                  <Tooltip
-                    contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                    labelStyle={{ color: "#a1a1aa" }}
-                    formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
-                  />
-                  <Bar dataKey="cost" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <h2 className="text-sm font-medium text-zinc-400 mb-4">Daily Cost</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dailyData}>
+              <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+              <Tooltip
+                contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
+                labelStyle={{ color: "#a1a1aa" }}
+                formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+              />
+              <Bar dataKey="cost" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-            <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-              <h2 className="text-sm font-medium text-zinc-400 mb-4">Cost by Model</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                    {modelData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                    formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </>
-      ) : (
-        <Empty msg="No usage data found for selected range." />
-      )}
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <h2 className="text-sm font-medium text-zinc-400 mb-4">Cost by Model</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                {modelData.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
+                formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }
