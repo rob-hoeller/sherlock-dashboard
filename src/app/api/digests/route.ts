@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
       .from("workspace_files")
       .select("file_path, file_name, content, size_bytes, updated_at")
       .eq('file_type', 'digest') // Added filter for file_type
-      .textSearch("content", search, { type: "websearch" })
-      .order("rank", { ascending: false });
+      .ilike("content", `%${search}%`)
+      .order("file_name", { ascending: false });
 
     ({ data, error } = await searchQuery);
   } else {
