@@ -104,6 +104,12 @@ export default function Home() {
     .map(([name, value]) => ({ name, value: +value.toFixed(4) }))
     .sort((a, b) => b.value - a.value);
 
+  // Create a mapping of model names to colors
+  const modelColors: Record<string, string> = {};
+  modelData.forEach((model, index) => {
+    modelColors[model.name] = COLORS[index % COLORS.length];
+  });
+
   const totalCost = data.reduce((s, e) => s + e.total_cost, 0);
   const totalCalls = data.reduce((s, e) => s + e.api_calls, 0);
   const totalInput = data.reduce((s, e) => s + e.input_tokens, 0);
@@ -168,8 +174,8 @@ export default function Home() {
                 labelStyle={{ color: "#a1a1aa" }}
                 formatter={(v: number, name: string) => [`$${v.toFixed(4)}`, name]}
               />
-              {Object.keys(byModel).map((model, index) => (
-                <Bar key={model} dataKey={model} stackId="cost" fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} />
+              {Object.keys(byModel).map((model) => (
+                <Bar key={model} dataKey={model} stackId="cost" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -180,8 +186,8 @@ export default function Home() {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                {modelData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                {modelData.map((entry) => (
+                  <Cell key={entry.name} fill={modelColors[entry.name]} />
                 ))}
               </Pie>
               <Tooltip
