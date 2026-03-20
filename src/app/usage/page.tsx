@@ -2,31 +2,32 @@
 import { useEffect, useState } from "react";
 import { ArrowUpDown } from "lucide-react";
 
-interface UsageEntry {
-  date: string;
+interface UsageRow {
+  summary_date: string;
   provider: string;
   model: string;
-  calls: number;
-  inputTokens: number;
-  outputTokens: number;
-  cacheRead: number;
-  cacheWrite: number;
-  cost: number;
+  api_calls: number;
+  session_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  total_cost: number;
 }
 
-type SortKey = "date" | "model" | "calls" | "cost" | "inputTokens" | "outputTokens";
+type SortKey = "summary_date" | "model" | "api_calls" | "total_cost" | "input_tokens" | "output_tokens";
 
 export default function UsagePage() {
-  const [data, setData] = useState<UsageEntry[]>([]);
+  const [data, setData] = useState<UsageRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortKey, setSortKey] = useState<SortKey>("summary_date");
   const [sortDesc, setSortDesc] = useState(true);
   const [filterModel, setFilterModel] = useState("");
 
   useEffect(() => {
     fetch("/api/usage?days=90")
       .then((r) => r.json())
-      .then(setData)
+      .then((res) => setData(res.usage || []))
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,14 +47,13 @@ export default function UsagePage() {
     else { setSortKey(key); setSortDesc(true); }
   };
 
-  const totalCost = filtered.reduce((s, e) => s + e.cost, 0);
-  const totalCalls = filtered.reduce((s, e) => s + e.calls, 0);
+  const totalCost = filtered.reduce((s, e) => s + e.total_cost, 0);
+  const totalCalls = filtered.reduce((s, e) => s + e.api_calls, 0);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">📊 Model Calls & Tokens</h1>
 
-      {/* Filters */}
       <div className="flex items-center gap-4">
         <select
           value={filterModel}
@@ -68,18 +68,17 @@ export default function UsagePage() {
         </span>
       </div>
 
-      {/* Table */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-800">
               {([
-                ["date", "Date"],
+                ["summary_date", "Date"],
                 ["model", "Model"],
-                ["calls", "Calls"],
-                ["inputTokens", "Input"],
-                ["outputTokens", "Output"],
-                ["cost", "Cost"],
+                ["api_calls", "Calls"],
+                ["input_tokens", "Input"],
+                ["output_tokens", "Output"],
+                ["total_cost", "Cost"],
               ] as [SortKey, string][]).map(([key, label]) => (
                 <th
                   key={key}
@@ -97,14 +96,16 @@ export default function UsagePage() {
           <tbody className="divide-y divide-zinc-800/50">
             {sorted.map((e, i) => (
               <tr key={i} className="hover:bg-zinc-800/50">
-                <td className="px-4 py-2.5 font-mono text-zinc-400">{e.date}</td>
+                <td className="px-4 py-2.5 font-mono text-zinc-400">{e.summary_date}</td>
                 <td className="px-4 py-2.5">
-                  <span className="bg-zinc-800 px-2 py-0.5 rounded text-xs">{e.model}</span>
+                  <span className="bg-zinc-800 px-2 py-0.5 rounded text-xs">
+                    {e.model === "unknown" ? e.provider : e.model}
+                  </span>
                 </td>
-                <td className="px-4 py-2.5 text-right">{e.calls}</td>
-                <td className="px-4 py-2.5 text-right font-mono text-zinc-400">{e.inputTokens.toLocaleString()}</td>
-                <td className="px-4 py-2.5 text-right font-mono text-zinc-400">{e.outputTokens.toLocaleString()}</td>
-                <td className="px-4 py-2.5 text-right font-mono text-amber-400">${e.cost.toFixed(4)}</td>
+                <td className="px-4 py-2.5 text-right">{e.api_calls}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-zinc-400">{e.input_tokens.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-zinc-400">{e.output_tokens.toLocaleString()}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-amber-400">${e.total_cost.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>

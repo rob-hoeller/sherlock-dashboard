@@ -9,6 +9,7 @@ export default function GoverningPage() {
   const [content, setContent] = useState("");
   const [original, setOriginal] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   const loadFile = useCallback(async (name: string) => {
@@ -16,6 +17,7 @@ export default function GoverningPage() {
     const data = await res.json();
     setContent(data.content || "");
     setOriginal(data.content || "");
+    setSaved(false);
   }, []);
 
   useEffect(() => { loadFile(selected); }, [selected, loadFile]);
@@ -29,6 +31,8 @@ export default function GoverningPage() {
     });
     setOriginal(content);
     setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const dirty = content !== original;
@@ -36,8 +40,8 @@ export default function GoverningPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">⚙️ Governing Files</h1>
+      <p className="text-zinc-500 text-sm">Edit Sherlock&apos;s configuration files. Changes save to the database and sync back to the host.</p>
 
-      {/* File tabs */}
       <div className="flex flex-wrap gap-2">
         {FILES.map((f) => (
           <button
@@ -52,11 +56,11 @@ export default function GoverningPage() {
         ))}
       </div>
 
-      {/* Editor */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-800">
         <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
           <span className="text-sm font-mono text-zinc-400">{selected}</span>
           <div className="flex items-center gap-2">
+            {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
             <button
               onClick={() => setMode(mode === "edit" ? "preview" : "edit")}
               className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100"

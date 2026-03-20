@@ -2,36 +2,39 @@
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-interface UsageEntry {
-  date: string;
+interface UsageRow {
+  summary_date: string;
   provider: string;
   model: string;
-  calls: number;
-  inputTokens: number;
-  outputTokens: number;
-  cost: number;
+  api_calls: number;
+  session_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  total_cost: number;
 }
 
 const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function Home() {
-  const [data, setData] = useState<UsageEntry[]>([]);
+  const [data, setData] = useState<UsageRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/usage?days=30")
       .then((r) => r.json())
-      .then(setData)
+      .then((res) => setData(res.usage || []))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-zinc-500 p-8">Loading usage data...</div>;
-  if (!data.length) return <div className="text-zinc-500 p-8">No usage data found. Check SESSIONS_PATH in .env.local</div>;
+  if (loading) return <Loading />;
+  if (!data.length) return <Empty msg="No usage data found for the last 30 days." />;
 
   // Aggregate by day
   const byDay: Record<string, number> = {};
   for (const e of data) {
-    byDay[e.date] = (byDay[e.date] || 0) + e.cost;
+    byDay[e.summary_date] = (byDay[e.summary_date] || 0) + e.total_cost;
   }
   const dailyData = Object.entries(byDay)
     .map(([date, cost]) => ({ date: date.slice(5), cost: +cost.toFixed(4) }))
@@ -40,18 +43,17 @@ export default function Home() {
   // Aggregate by model
   const byModel: Record<string, number> = {};
   for (const e of data) {
-    const label = e.model.split("/").pop() || e.model;
-    byModel[label] = (byModel[label] || 0) + e.cost;
+    const label = e.model === "unknown" ? e.provider : e.model;
+    byModel[label] = (byModel[label] || 0) + e.total_cost;
   }
   const modelData = Object.entries(byModel)
     .map(([name, value]) => ({ name, value: +value.toFixed(4) }))
     .sort((a, b) => b.value - a.value);
 
-  // Totals
-  const totalCost = data.reduce((s, e) => s + e.cost, 0);
-  const totalCalls = data.reduce((s, e) => s + e.calls, 0);
-  const totalInput = data.reduce((s, e) => s + e.inputTokens, 0);
-  const totalOutput = data.reduce((s, e) => s + e.outputTokens, 0);
+  const totalCost = data.reduce((s, e) => s + e.total_cost, 0);
+  const totalCalls = data.reduce((s, e) => s + e.api_calls, 0);
+  const totalInput = data.reduce((s, e) => s + e.input_tokens, 0);
+  const totalOutput = data.reduce((s, e) => s + e.output_tokens, 0);
 
   return (
     <div className="space-y-8">
@@ -60,15 +62,13 @@ export default function Home() {
         <p className="text-zinc-500 text-sm mt-1">Last 30 days</p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} />
         <StatCard label="API Calls" value={totalCalls.toLocaleString()} />
-        <StatCard label="Input Tokens" value={formatTokens(totalInput)} />
-        <StatCard label="Output Tokens" value={formatTokens(totalOutput)} />
+        <StatCard label="Input Tokens" value={fmt(totalInput)} />
+        <StatCard label="Output Tokens" value={fmt(totalOutput)} />
       </div>
 
-      {/* Charts */}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-zinc-900 rounded-xl p-4 border border-zinc-800">
           <h2 className="text-sm font-medium text-zinc-400 mb-4">Daily Cost</h2>
@@ -116,7 +116,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatTokens(n: number): string {
+function Loading() {
+  return <div className="text-zinc-500 p-8">Loading usage data...</div>;
+}
+
+function Empty({ msg }: { msg: string }) {
+  return <div className="text-zinc-500 p-8">{msg}</div>;
+}
+
+function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toString();
