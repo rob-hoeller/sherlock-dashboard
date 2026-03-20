@@ -13,9 +13,9 @@ const nav = [
 export function Sidebar() {
   const path = usePathname();
   return (
-    <aside className="fixed left-0 top-0 h-screen w-16 sm:w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col z-50">
-      <div className="p-3 sm:p-4 border-b border-zinc-800">
-        <h1 className="hidden sm:block text-lg font-bold tracking-tight">
+    <aside className="fixed left-0 top-0 h-screen w-16 sm:w-56 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col z-50">
+      <div className="p-3 sm:p-4 border-b border-zinc-200 dark:border-zinc-800">
+        <h1 className="hidden sm:block text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           🕵️‍♂️ Sherlock
         </h1>
         <span className="sm:hidden text-2xl block text-center">🕵️‍♂️</span>
@@ -29,8 +29,8 @@ export function Sidebar() {
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors ${
                 active
-                  ? "bg-amber-500/10 text-amber-400"
-                  : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               <Icon size={20} />
@@ -39,7 +39,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-3 sm:p-4 border-t border-zinc-800 text-xs text-zinc-500 hidden sm:block">
+      <div className="p-3 sm:p-4 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500 hidden sm:block">
         Baker Street v0.1
       </div>
     </aside>

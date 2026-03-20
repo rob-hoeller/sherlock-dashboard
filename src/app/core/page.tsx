@@ -40,7 +40,7 @@ export default function GoverningPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">⚙️ Core Files</h1>
-      <p className="text-zinc-500 text-sm">Edit Sherlock&apos;s configuration files. Changes save to the database and sync back to the host.</p>
+      <p className="text-zinc-500 text-sm dark:text-zinc-400">Edit Sherlock&apos;s configuration files. Changes save to the database and sync back to the host.</p>
 
       <div className="flex flex-wrap gap-2">
         {FILES.map((f) => (
@@ -48,7 +48,7 @@ export default function GoverningPage() {
             key={f}
             onClick={() => setSelected(f)}
             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              selected === f ? "bg-amber-500/10 text-amber-400 border border-amber-500/30" : "text-zinc-400 hover:text-zinc-100 bg-zinc-900 border border-zinc-800"
+              selected === f ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" : "text-zinc-400 hover:text-zinc-100 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
             }`}
           >
             <FileText size={14} className="inline mr-1.5 -mt-0.5" />{f}
@@ -56,14 +56,14 @@ export default function GoverningPage() {
         ))}
       </div>
 
-      <div className="bg-zinc-900 rounded-xl border border-zinc-800">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
-          <span className="text-sm font-mono text-zinc-400">{selected}</span>
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">
+          <span className="text-sm font-mono text-zinc-500 dark:text-zinc-400">{selected}</span>
           <div className="flex items-center gap-2">
             {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
             <button
               onClick={() => setMode(mode === "edit" ? "preview" : "edit")}
-              className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100"
+              className="p-1.5 rounded hover:bg-zinc-800 dark:hover:bg-zinc-100 text-zinc-400 dark:text-zinc-500 hover:text-zinc-100"
               title={mode === "edit" ? "Preview" : "Edit"}
             >
               {mode === "edit" ? <Eye size={16} /> : <Pencil size={16} />}
@@ -72,7 +72,7 @@ export default function GoverningPage() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-black rounded-lg text-sm font-medium hover:bg-amber-400 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 text-black rounded-lg text-sm font-medium hover:bg-amber-400 disabled:opacity-50"
               >
                 <Save size={14} /> {saving ? "Saving..." : "Save"}
               </button>
@@ -83,11 +83,11 @@ export default function GoverningPage() {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-[70vh] bg-transparent p-4 font-mono text-sm text-zinc-300 focus:outline-none resize-none"
+            className="w-full h-[70vh] bg-transparent p-4 font-mono text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
             spellCheck={false}
           />
         ) : (
-          <pre className="p-4 font-mono text-sm text-zinc-300 whitespace-pre-wrap max-h-[70vh] overflow-auto">
+          <pre className="p-4 font-mono text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap max-h-[70vh] overflow-auto">
             {content}
           </pre>
         )}
