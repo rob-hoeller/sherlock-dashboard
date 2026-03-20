@@ -39,12 +39,24 @@ function getDaysAgo(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+type Metric = 'cost' | 'calls' | 'input' | 'output';
+
+function metricValue(row: UsageRow, metric: Metric): number {
+  switch (metric) {
+    case 'cost': return row.total_cost;
+    case 'calls': return row.api_calls;
+    case 'input': return row.input_tokens;
+    case 'output': return row.output_tokens;
+  }
+}
+
 export default function Home() {
   const [data, setData] = useState<UsageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(getWeekStart());
   const [endDate, setEndDate] = useState(getToday());
   const [preset, setPreset] = useState("WTD");
+  const [selectedMetric, setSelectedMetric] = useState<Metric>('cost');
 
   useEffect(() => {
     setLoading(true);
@@ -78,6 +90,10 @@ export default function Home() {
     }
   };
 
+  const handleMetricSelect = (metric: Metric) => {
+    setSelectedMetric(metric);
+  };
+
   if (loading) return <Loading />;
   if (!data.length) return <Empty msg="No usage data found for selected range." />;
 
@@ -87,7 +103,7 @@ export default function Home() {
     if (!byDayModel[e.summary_date]) {
       byDayModel[e.summary_date] = {};
     }
-    byDayModel[e.summary_date][label] = (byDayModel[e.summary_date][label] || 0) + e.total_cost;
+    byDayModel[e.summary_date][label] = (byDayModel[e.summary_date][label] || 0) + metricValue(e, selectedMetric);
   }
 
   const dailyDataWithModels = Object.entries(byDayModel).map(([date, costs]) => ({
@@ -98,7 +114,7 @@ export default function Home() {
   const byModel: Record<string, number> = {};
   for (const e of data) {
     const label = e.model === "unknown" ? e.provider : e.model;
-    byModel[label] = (byModel[label] || 0) + e.total_cost;
+    byModel[label] = (byModel[label] || 0) + metricValue(e, selectedMetric);
   }
   const modelData = Object.entries(byModel)
     .map(([name, value]) => ({ name, value: +value.toFixed(4) }))
@@ -110,13 +126,51 @@ export default function Home() {
     modelColors[model.name] = COLORS[index % COLORS.length];
   });
 
-  const totalCost = data.reduce((s, e) => s + e.total_cost, 0);
-  const totalCalls = data.reduce((s, e) => s + e.api_calls, 0);
-  const totalInput = data.reduce((s, e) => s + e.input_tokens, 0);
-  const totalOutput = data.reduce((s, e) => s + e.output_tokens, 0);
+  const totalCost = data.reduce((s, e) => s + metricValue(e, 'cost'), 0);
+  const totalCalls = data.reduce((s, e) => s + metricValue(e, 'calls'), 0);
+  const totalInput = data.reduce((s, e) => s + metricValue(e, 'input'), 0);
+  const totalOutput = data.reduce((s, e) => s + metricValue(e, 'output'), 0);
 
-  // Sort models by total cost descending
+  // Sort models by selected metric descending
   const sortedModels = modelData.map(model => model.name).sort((a, b) => byModel[b] - byModel[a]);
+
+  const barChartTitle = {
+    cost: "Daily Cost",
+    calls: "Daily API Calls",
+    input: "Daily Input Tokens",
+    output: "Daily Output Tokens"
+  }[selectedMetric];
+
+  const pieChartTitle = {
+    cost: "Cost by Model",
+    calls: "API Calls by Model",
+    input: "Input Tokens by Model",
+    output: "Output Tokens by Model"
+  }[selectedMetric];
+
+  const barChartYAxisFormatter = (v: number) => {
+    switch (selectedMetric) {
+      case 'cost': return `$${v}`;
+      case 'calls': return v.toLocaleString();
+      default: return fmt(v);
+    }
+  };
+
+  const tooltipFormatter = (v: number, name: string) => {
+    switch (selectedMetric) {
+      case 'cost': return [`$${v.toFixed(4)}`, name];
+      case 'calls': return [v.toLocaleString(), name];
+      default: return [fmt(v), name];
+    }
+  };
+
+  const pieTooltipFormatter = (v: number) => {
+    switch (selectedMetric) {
+      case 'cost': return [`$${v.toFixed(4)}`, selectedMetric];
+      case 'calls': return [v.toLocaleString(), selectedMetric];
+      default: return [fmt(v), selectedMetric];
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -159,33 +213,33 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} />
-        <StatCard label="API Calls" value={totalCalls.toLocaleString()} />
-        <StatCard label="Input Tokens" value={fmt(totalInput)} />
-        <StatCard label="Output Tokens" value={fmt(totalOutput)} />
+        <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
+        <StatCard label="API Calls" value={totalCalls.toLocaleString()} onClick={() => handleMetricSelect('calls')} selected={selectedMetric === 'calls'} />
+        <StatCard label="Input Tokens" value={fmt(totalInput)} onClick={() => handleMetricSelect('input')} selected={selectedMetric === 'input'} />
+        <StatCard label="Output Tokens" value={fmt(totalOutput)} onClick={() => handleMetricSelect('output')} selected={selectedMetric === 'output'} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Daily Cost</h2>
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyDataWithModels}>
               <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
-              <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+              <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
               <Tooltip
                 contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
                 labelStyle={{ color: "#a1a1aa" }}
-                formatter={(v: number, name: string) => [`$${v.toFixed(4)}`, name]}
+                formatter={tooltipFormatter}
               />
               {sortedModels.map((model) => (
-                <Bar key={model} dataKey={model} stackId="cost" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
+                <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
               ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Cost by Model</h2>
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{pieChartTitle}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
@@ -195,7 +249,7 @@ export default function Home() {
               </Pie>
               <Tooltip
                 contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+                formatter={pieTooltipFormatter}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -205,12 +259,17 @@ export default function Home() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, onClick, selected }: { label: string; value: string; onClick: () => void; selected: boolean }) {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+    <button
+      className={`bg-white dark:bg-zinc-900 rounded-xl p-4 border transition-colors ${
+        selected ? "border-amber-500 ring-2 ring-amber-500" : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+      } cursor-pointer`}
+      onClick={onClick}
+    >
       <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</p>
       <p className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">{value}</p>
-    </div>
+    </button>
   );
 }
 
