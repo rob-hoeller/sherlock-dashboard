@@ -115,6 +115,9 @@ export default function Home() {
   const totalInput = data.reduce((s, e) => s + e.input_tokens, 0);
   const totalOutput = data.reduce((s, e) => s + e.output_tokens, 0);
 
+  // Sort models by total cost descending
+  const sortedModels = modelData.map(model => model.name).sort((a, b) => byModel[b] - byModel[a]);
+
   return (
     <div className="space-y-8">
       <div>
@@ -174,7 +177,7 @@ export default function Home() {
                 labelStyle={{ color: "#a1a1aa" }}
                 formatter={(v: number, name: string) => [`$${v.toFixed(4)}`, name]}
               />
-              {Object.keys(byModel).map((model) => (
+              {sortedModels.map((model) => (
                 <Bar key={model} dataKey={model} stackId="cost" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
               ))}
             </BarChart>
