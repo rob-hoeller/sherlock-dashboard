@@ -1,6 +1,15 @@
+import { createClient as supabaseCreateClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const createClient = () => {
+  return supabaseCreateClient(supabaseUrl, supabaseAnonKey);
+};
 "use client";
 import { useEffect, useState } from "react";
 import { ScrollText, Calendar, Search, X } from "lucide-react";
+import { createClient } from "@/lib/supabase";
 
 interface Digest {
   file_path: string;
@@ -141,4 +150,45 @@ export default function DigestsPage() {
       </div>
     </div>
   );
+}
+
+import type { NextRequest } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const supabase = createClient();
+  const searchParams = request.nextUrl.searchParams;
+  const search = searchParams.get("search");
+  const date = searchParams.get("date");
+
+  if (date) {
+    const { data, error } = await supabase
+      .from("files")
+      .select("content")
+      .eq("file_type", "digest") // Ensure only digests are fetched
+      .like("file_name", `%${date}%`)
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+
+    return new Response(JSON.stringify(data), { status: 200 });
+  } else {
+    let query = supabase
+      .from("files")
+      .select("file_path, file_name, size_bytes, updated_at")
+      .eq("file_type", "digest"); // Ensure only digests are fetched
+
+    if (search) {
+      query = query.like("content", `%${search}%`).or(`file_name.ilike.%${search}%,snippet.ilike.%${search}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+
+    return new Response(JSON.stringify(data), { status: 200 });
+  }
 }

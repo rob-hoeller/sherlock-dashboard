@@ -1,5 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date");
@@ -9,7 +14,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from("workspace_files")
       .select("file_path, file_name, content, size_bytes, updated_at")
-      .eq("file_type", "digest")
+      .eq('file_type', 'digest') // Added filter for file_type
       .like("file_name", `%${date}%`)
       .single();
 
@@ -24,6 +29,7 @@ export async function GET(req: NextRequest) {
     const searchQuery = supabaseAdmin
       .from("workspace_files")
       .select("file_path, file_name, content, size_bytes, updated_at")
+      .eq('file_type', 'digest') // Added filter for file_type
       .textSearch("content", search, { type: "websearch" })
       .order("rank", { ascending: false });
 
@@ -32,6 +38,7 @@ export async function GET(req: NextRequest) {
     const noSearchQuery = supabaseAdmin
       .from("workspace_files")
       .select("file_path, file_name, size_bytes, updated_at")
+      .eq('file_type', 'digest') // Added filter for file_type
       .order("file_name", { ascending: false });
 
     ({ data, error } = await noSearchQuery);
