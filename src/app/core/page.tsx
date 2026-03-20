@@ -39,7 +39,7 @@ export default function GoverningPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">⚙️ Governing Files</h1>
+      <h1 className="text-2xl font-bold">⚙️ Core Files</h1>
       <p className="text-zinc-500 text-sm">Edit Sherlock&apos;s configuration files. Changes save to the database and sync back to the host.</p>
 
       <div className="flex flex-wrap gap-2">

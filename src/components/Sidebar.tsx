@@ -1,14 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FolderOpen, FileText, ScrollText, Settings } from "lucide-react";
+import { BarChart3, FileText, ScrollText, Settings } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Usage", icon: BarChart3 },
-  { href: "/files", label: "Workspace", icon: FolderOpen },
-  { href: "/governing", label: "Governing", icon: Settings },
+  { href: "/core", label: "Core Files", icon: Settings },
   { href: "/digests", label: "Digests", icon: ScrollText },
-  { href: "/usage", label: "Model Calls", icon: FileText },
+  { href: "/models", label: "Model Calls", icon: FileText },
 ];
 
 export function Sidebar() {
