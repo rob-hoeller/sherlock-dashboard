@@ -111,7 +111,7 @@ export default function Home() {
       </div>
 
       {/* Date Range Selector */}
-      <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 space-y-4">
         <div className="flex flex-wrap gap-2">
           {["Today", "WTD", "MTD", "Last 30d", "Last 90d", "All"].map((p) => (
             <button
@@ -119,8 +119,8 @@ export default function Home() {
               onClick={() => applyPreset(p)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 preset === p
-                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                  : "text-zinc-400 hover:text-zinc-100 bg-zinc-800 border border-zinc-700"
+                  ? "bg-amber-400/20 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/30"
+                  : "text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
               }`}
             >
               {p}
@@ -132,13 +132,13 @@ export default function Home() {
             type="date"
             value={startDate}
             onChange={(e) => { setStartDate(e.target.value); setPreset("Custom"); }}
-            className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-300"
+            className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-900 dark:text-zinc-300"
           />
           <input
             type="date"
             value={endDate}
             onChange={(e) => { setEndDate(e.target.value); setPreset("Custom"); }}
-            className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-300"
+            className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-900 dark:text-zinc-300"
           />
         </div>
       </div>
@@ -151,8 +151,8 @@ export default function Home() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-400 mb-4">Daily Cost</h2>
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Daily Cost</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyData}>
               <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
@@ -167,8 +167,8 @@ export default function Home() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-400 mb-4">Cost by Model</h2>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Cost by Model</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
@@ -190,9 +190,9 @@ export default function Home() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
-      <p className="text-xs text-zinc-500 uppercase tracking-wider">{label}</p>
-      <p className="text-2xl font-bold mt-1">{value}</p>
+    <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</p>
+      <p className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">{value}</p>
     </div>
   );
 }
