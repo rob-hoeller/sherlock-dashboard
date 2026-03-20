@@ -13,7 +13,7 @@ export default function GoverningPage() {
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   const loadFile = useCallback(async (name: string) => {
-    const res = await fetch(`/api/files?mode=read&path=${encodeURIComponent(name)}`);
+    const res = await fetch(`/api/files?path=${encodeURIComponent(name)}`);
     const data = await res.json();
     setContent(data.content || "");
     setOriginal(data.content || "");
