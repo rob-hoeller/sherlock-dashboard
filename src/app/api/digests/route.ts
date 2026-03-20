@@ -19,11 +19,13 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from("workspace_files")
-    .select("file_path, file_name, size_bytes, updated_at")
-    .eq("file_type", "digest");
+    .select("file_path, file_name, size_bytes, updated_at");
 
   if (search) {
-    query = query.textSearch("content", search, { type: "websearch" }).order("rank", { ascending: false });
+    query = query
+      .select("file_path, file_name, content, size_bytes, updated_at") // Include content in the select clause for search
+      .textSearch("content", search, { type: "websearch" })
+      .order("rank", { ascending: false });
   } else {
     query = query.order("file_name", { ascending: false });
   }
