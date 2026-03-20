@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ScrollText, Calendar, Search, X } from "lucide-react";
 
 interface Digest {
@@ -16,6 +16,8 @@ export default function DigestsPage() {
   const [content, setContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const contentRef = useRef<HTMLPreElement | null>(null);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -56,6 +58,34 @@ export default function DigestsPage() {
     const data = await res.json();
     setContent(data.content || "");
   };
+
+  useEffect(() => {
+    if (content && debouncedSearchTerm) {
+      setTimeout(() => {
+        const preElement = contentRef.current;
+        if (!preElement) return;
+
+        const searchRegex = new RegExp(debouncedSearchTerm, "gi");
+        let match;
+        let highlightedContent = "";
+        let lastIndex = 0;
+
+        while ((match = searchRegex.exec(content)) !== null) {
+          highlightedContent += content.slice(lastIndex, match.index);
+          highlightedContent += `<mark class="bg-amber-200 dark:bg-amber-800 text-zinc-900 dark:text-zinc-100 rounded px-0.5">${match[0]}</mark>`;
+          lastIndex = searchRegex.lastIndex;
+        }
+        highlightedContent += content.slice(lastIndex);
+
+        preElement.innerHTML = highlightedContent;
+
+        const firstMark = preElement.querySelector("mark");
+        if (firstMark) {
+          firstMark.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, [content, debouncedSearchTerm]);
 
   const getDate = (name: string) => {
     const m = name.match(/(\d{4}-\d{2}-\d{2})/);
@@ -130,7 +160,7 @@ export default function DigestsPage() {
                 <ScrollText size={18} className="text-amber-500" />
                 <h2 className="font-medium">Digest — {selected}</h2>
               </div>
-              <pre className="text-sm text-zinc-900 dark:text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
+              <pre ref={contentRef} className="text-sm text-zinc-900 dark:text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
                 {content}
               </pre>
             </>

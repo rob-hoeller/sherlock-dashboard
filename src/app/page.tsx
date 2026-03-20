@@ -81,13 +81,19 @@ export default function Home() {
   if (loading) return <Loading />;
   if (!data.length) return <Empty msg="No usage data found for selected range." />;
 
-  const byDay: Record<string, number> = {};
+  const byDayModel: Record<string, Record<string, number>> = {};
   for (const e of data) {
-    byDay[e.summary_date] = (byDay[e.summary_date] || 0) + e.total_cost;
+    const label = e.model === "unknown" ? e.provider : e.model;
+    if (!byDayModel[e.summary_date]) {
+      byDayModel[e.summary_date] = {};
+    }
+    byDayModel[e.summary_date][label] = (byDayModel[e.summary_date][label] || 0) + e.total_cost;
   }
-  const dailyData = Object.entries(byDay)
-    .map(([date, cost]) => ({ date: date.slice(5), cost: +cost.toFixed(4) }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const dailyDataWithModels = Object.entries(byDayModel).map(([date, costs]) => ({
+    date: date.slice(5),
+    ...costs,
+  })).sort((a, b) => a.date.localeCompare(b.date));
 
   const byModel: Record<string, number> = {};
   for (const e of data) {
@@ -98,10 +104,19 @@ export default function Home() {
     .map(([name, value]) => ({ name, value: +value.toFixed(4) }))
     .sort((a, b) => b.value - a.value);
 
+  // Create a mapping of model names to colors
+  const modelColors: Record<string, string> = {};
+  modelData.forEach((model, index) => {
+    modelColors[model.name] = COLORS[index % COLORS.length];
+  });
+
   const totalCost = data.reduce((s, e) => s + e.total_cost, 0);
   const totalCalls = data.reduce((s, e) => s + e.api_calls, 0);
   const totalInput = data.reduce((s, e) => s + e.input_tokens, 0);
   const totalOutput = data.reduce((s, e) => s + e.output_tokens, 0);
+
+  // Sort models by total cost descending
+  const sortedModels = modelData.map(model => model.name).sort((a, b) => byModel[b] - byModel[a]);
 
   return (
     <div className="space-y-8">
@@ -154,15 +169,17 @@ export default function Home() {
         <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
           <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Daily Cost</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dailyData}>
+            <BarChart data={dailyDataWithModels}>
               <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
               <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
               <Tooltip
                 contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
                 labelStyle={{ color: "#a1a1aa" }}
-                formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+                formatter={(v: number, name: string) => [`$${v.toFixed(4)}`, name]}
               />
-              <Bar dataKey="cost" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              {sortedModels.map((model) => (
+                <Bar key={model} dataKey={model} stackId="cost" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -172,8 +189,8 @@ export default function Home() {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                {modelData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                {modelData.map((entry) => (
+                  <Cell key={entry.name} fill={modelColors[entry.name]} />
                 ))}
               </Pie>
               <Tooltip
