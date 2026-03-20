@@ -17,21 +17,70 @@ interface UsageRow {
 
 const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
 
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  return new Date(now.setDate(diff)).toISOString().slice(0, 10);
+}
+
+function getToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getMonthStart() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+}
+
+function getDaysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function Home() {
   const [data, setData] = useState<UsageRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState(getWeekStart());
+  const [endDate, setEndDate] = useState(getToday());
+  const [preset, setPreset] = useState("WTD");
 
   useEffect(() => {
-    fetch("/api/usage?days=30")
+    setLoading(true);
+    fetch(`/api/usage?start=${startDate}&end=${endDate}`)
       .then((r) => r.json())
       .then((res) => setData(res.usage || []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [startDate, endDate]);
+
+  const applyPreset = (p: string) => {
+    setPreset(p);
+    const today = getToday();
+    if (p === "Today") {
+      setStartDate(today);
+      setEndDate(today);
+    } else if (p === "WTD") {
+      setStartDate(getWeekStart());
+      setEndDate(today);
+    } else if (p === "MTD") {
+      setStartDate(getMonthStart());
+      setEndDate(today);
+    } else if (p === "Last 30d") {
+      setStartDate(getDaysAgo(30));
+      setEndDate(today);
+    } else if (p === "Last 90d") {
+      setStartDate(getDaysAgo(90));
+      setEndDate(today);
+    } else if (p === "All") {
+      setStartDate("2020-01-01");
+      setEndDate(today);
+    }
+  };
 
   if (loading) return <Loading />;
-  if (!data.length) return <Empty msg="No usage data found for the last 30 days." />;
+  if (!data.length) return <Empty msg="No usage data found for selected range." />;
 
-  // Aggregate by day
   const byDay: Record<string, number> = {};
   for (const e of data) {
     byDay[e.summary_date] = (byDay[e.summary_date] || 0) + e.total_cost;
@@ -40,7 +89,6 @@ export default function Home() {
     .map(([date, cost]) => ({ date: date.slice(5), cost: +cost.toFixed(4) }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Aggregate by model
   const byModel: Record<string, number> = {};
   for (const e of data) {
     const label = e.model === "unknown" ? e.provider : e.model;
@@ -59,7 +107,40 @@ export default function Home() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">🕵️‍♂️ Dashboard</h1>
-        <p className="text-zinc-500 text-sm mt-1">Last 30 days</p>
+        <p className="text-zinc-500 text-sm mt-1">{startDate} to {endDate}</p>
+      </div>
+
+      {/* Date Range Selector */}
+      <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {["Today", "WTD", "MTD", "Last 30d", "Last 90d", "All"].map((p) => (
+            <button
+              key={p}
+              onClick={() => applyPreset(p)}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                preset === p
+                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                  : "text-zinc-400 hover:text-zinc-100 bg-zinc-800 border border-zinc-700"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => { setStartDate(e.target.value); setPreset("Custom"); }}
+            className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-300"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => { setEndDate(e.target.value); setPreset("Custom"); }}
+            className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-300"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
