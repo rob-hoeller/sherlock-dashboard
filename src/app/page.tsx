@@ -47,7 +47,7 @@ export default function Home() {
   const [modelColors, setModelColors] = useState<Record<string, string>>({});
   const [isDark, setIsDark] = useState(false);
   const router = useRouter();
-  const [taskCounts, setTaskCounts] = useState({ active: 0, needsReview: 0, blocked: 0 });
+  const [taskCounts, setTaskCounts] = useState({ active: 0, needsReview: 0, blocked: 0, preview: 0 });
 
   useEffect(() => {
     setLoading(true);
@@ -80,7 +80,8 @@ export default function Home() {
         const active = data.filter((t: { status: string }) => t.status !== "completed" && t.status !== "cancelled").length;
         const needsReview = data.filter((t: { status: string }) => t.status === "needs_review").length;
         const blocked = data.filter((t: { status: string }) => t.status === "blocked").length;
-        setTaskCounts({ active, needsReview, blocked });
+        const preview = data.filter((t: { status: string }) => t.status === "preview").length;
+      setTaskCounts({ active, needsReview, blocked, preview });
       } catch { /* ignore */ }
     }
     fetchTaskCounts();
@@ -179,9 +180,34 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">🕵️‍♂️ Dashboard</h1>
-        <p className="text-zinc-500 text-sm mt-1">{startDate} to {endDate}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">🕵️‍♂️ Dashboard</h1>
+          <p className="text-zinc-500 text-sm mt-1">{startDate} to {endDate}</p>
+        </div>
+        <div
+          className="flex items-center gap-6 bg-white dark:bg-zinc-900 rounded-xl px-5 py-3 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer transition-colors"
+          onClick={() => router.push("/tasks")}
+        >
+          <div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Tasks</p>
+            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{taskCounts.active}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="text-right">
+              <p className="text-xs text-amber-500 dark:text-amber-400">Needs Review</p>
+              <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">{taskCounts.needsReview}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-purple-500 dark:text-purple-400">Preview</p>
+              <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">{taskCounts.preview}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-red-500 dark:text-red-400">Blocked</p>
+              <p className="text-lg font-semibold text-red-600 dark:text-red-400">{taskCounts.blocked}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Date Range Selector */}
@@ -301,27 +327,7 @@ export default function Home() {
         </>
       )}
 
-      <div
-        className="mt-4 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer transition-colors"
-        onClick={() => router.push("/tasks")}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Tasks</p>
-            <p className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">{taskCounts.active}</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="text-right">
-              <p className="text-xs text-amber-500 dark:text-amber-400">Needs Review</p>
-              <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">{taskCounts.needsReview}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-red-500 dark:text-red-400">Blocked</p>
-              <p className="text-lg font-semibold text-red-600 dark:text-red-400">{taskCounts.blocked}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
