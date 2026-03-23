@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Task, TaskStatus } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink } from "lucide-react";
+import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
+import { Search, GithubIcon, ExternalLink, X } from "lucide-react";
+import TaskDetailPanel from "@/components/TaskDetailPanel";
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
   planning: "border-gray-400 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
@@ -111,6 +112,7 @@ export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
   const [completedDays, setCompletedDays] = useState(7);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTasks() {
@@ -172,7 +174,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
@@ -229,7 +231,7 @@ export default function TasksPage() {
                       </div>
                     ) : (
                       columnTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} onClick={() => {}} />
+                        <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
                       ))
                     )}
                   </div>
@@ -253,6 +255,9 @@ export default function TasksPage() {
           </div>
         </div>
       )}
+
+      {/* Task Detail Panel */}
+      <TaskDetailPanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
     </div>
   );
 }
