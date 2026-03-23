@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
 import { Search, GithubIcon, ExternalLink, X } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
+import { supabaseClient } from "@/lib/supabase";
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
   planning: "border-gray-400 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
@@ -136,6 +137,25 @@ export default function TasksPage() {
     }
     fetchTasks();
   }, [completedDays]);
+
+  useEffect(() => {
+    const channel = supabaseClient
+      .channel('tasks-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setTasks(prev => [payload.new as Task, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          setTasks(prev => prev.map(t => t.id === (payload.new as Task).id ? payload.new as Task : t));
+        } else if (payload.eventType === 'DELETE') {
+          setTasks(prev => prev.filter(t => t.id !== (payload.old as { id: string }).id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
 
   // Client-side search filter
   const filtered = searchTerm
