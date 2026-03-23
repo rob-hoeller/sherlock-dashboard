@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { ScrollText, Calendar, Search, X } from "lucide-react";
+import { ScrollText, Calendar, Search, X, Download } from "lucide-react";
 
 interface Digest {
   file_path: string;
@@ -101,6 +101,19 @@ export default function DigestsPage() {
     setDebouncedSearchTerm("");
   };
 
+  const downloadDigest = async (date: string) => {
+    const res = await fetch(`/api/digests?date=${date}`);
+    const data = await res.json();
+    if (!data.content) return;
+    const blob = new Blob([data.content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `digest-${date}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">📋 Daily Digests</h1>
@@ -143,6 +156,13 @@ export default function DigestsPage() {
                     )}
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">{(d.size_bytes / 1024).toFixed(1)} KB</p>
                   </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); downloadDigest(date); }}
+                    className="shrink-0 p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    title="Download digest"
+                  >
+                    <Download size={14} />
+                  </button>
                 </button>
               );
             })
@@ -159,6 +179,22 @@ export default function DigestsPage() {
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <ScrollText size={18} className="text-amber-500" />
                 <h2 className="font-medium">Digest — {selected}</h2>
+                <button
+                  onClick={() => {
+                    if (!selected || !content) return;
+                    const blob = new Blob([content], { type: "text/markdown" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `digest-${selected}.md`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="ml-auto p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  title="Download digest"
+                >
+                  <Download size={16} />
+                </button>
               </div>
               <pre ref={contentRef} className="text-sm text-zinc-900 dark:text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
                 {content}
