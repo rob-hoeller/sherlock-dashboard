@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
-import { X, GithubIcon, ExternalLink } from "lucide-react";
+import { X, GithubIcon, ExternalLink, Download } from "lucide-react";
 
 interface TaskDetailPanelProps {
   taskId: string | null;
@@ -42,8 +42,19 @@ function timeSince(date: Date): string {
   return `${days}d`;
 }
 
+function downloadDoc(fileName: string, content: string) {
+  const blob = new Blob([content], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function DocRow({ doc }: { doc: TaskDocument }) {
   const [open, setOpen] = useState(false);
+
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
       <button
@@ -59,7 +70,17 @@ function DocRow({ doc }: { doc: TaskDocument }) {
             {doc.doc_type}
           </span>
         </div>
-        <span className="text-xs text-gray-400">{open ? "Hide" : "Show"}</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => downloadDoc(doc.file_name, doc.content)}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+            aria-label={`Download ${doc.file_name}`}
+          >
+            <Download size={16} />
+          </button>
+          <span className="text-xs text-gray-400">{open ? "Hide" : "Show"}</span>
+        </div>
       </button>
       {open && (
         <pre className="px-3 py-2 text-xs whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
@@ -135,6 +156,22 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
   }, [taskId]);
 
   const open = Boolean(taskId);
+
+  async function fetchVercelPreview() {
+    if (!detail?.id || !detail.branch_name) return;
+
+    try {
+      const res = await fetch(`/api/tasks/${detail.id}/vercel`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setDetail((prev) => (prev ? { ...prev, vercel_preview_url: data.vercel_preview_url } : prev));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch Vercel preview");
+    }
+  }
 
   return (
     <div
@@ -224,7 +261,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                         <span className="truncate">{detail.pr_url}</span>
                       </a>
                     )}
-                    {detail.vercel_preview_url && (
+                    {detail.vercel_preview_url ? (
                       <a
                         href={detail.vercel_preview_url}
                         target="_blank"
@@ -234,12 +271,16 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                         <ExternalLink size={16} />
                         <span className="truncate">{detail.vercel_preview_url}</span>
                       </a>
-                    )}
-                    {detail.branch_name && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
-                        {detail.branch_name}
-                      </div>
-                    )}
+                    ) : detail.branch_name ? (
+                      <button
+                        type="button"
+                        onClick={fetchVercelPreview}
+                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        <ExternalLink size={16} />
+                        Fetch Preview
+                      </button>
+                    ) : null}
                   </div>
                 </section>
               )}
