@@ -15,22 +15,8 @@ interface UsageRow {
   total_cost: number;
 }
 
-const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"];
-
-function getWeekStart() {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day; // Sunday
-  return new Date(now.setDate(diff)).toISOString().slice(0, 10);
-}
-
 function getToday() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function getMonthStart() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 }
 
 function getDaysAgo(days: number) {
@@ -53,10 +39,11 @@ function metricValue(row: UsageRow, metric: Metric): number {
 export default function Home() {
   const [data, setData] = useState<UsageRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState(getWeekStart());
+  const [startDate, setStartDate] = useState(getDaysAgo(7));
   const [endDate, setEndDate] = useState(getToday());
-  const [preset, setPreset] = useState("WTD");
+  const [preset, setPreset] = useState("Last 7d");
   const [selectedMetric, setSelectedMetric] = useState<Metric>('calls');
+  const [modelColors, setModelColors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setLoading(true);
@@ -66,17 +53,17 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
+  useEffect(() => {
+    fetch('/api/colors')
+      .then((r) => r.json())
+      .then((colors) => setModelColors(colors));
+  }, []);
+
   const applyPreset = (p: string) => {
     setPreset(p);
     const today = getToday();
-    if (p === "Today") {
-      setStartDate(today);
-      setEndDate(today);
-    } else if (p === "WTD") {
-      setStartDate(getWeekStart());
-      setEndDate(today);
-    } else if (p === "MTD") {
-      setStartDate(getMonthStart());
+    if (p === "Last 7d") {
+      setStartDate(getDaysAgo(7));
       setEndDate(today);
     } else if (p === "Last 30d") {
       setStartDate(getDaysAgo(30));
@@ -116,12 +103,6 @@ export default function Home() {
   const modelData = Object.entries(byModel)
     .map(([name, value]) => ({ name, value: +value.toFixed(4) }))
     .sort((a, b) => b.value - a.value);
-
-  // Create a mapping of model names to colors
-  const modelColors: Record<string, string> = {};
-  modelData.forEach((model, index) => {
-    modelColors[model.name] = COLORS[index % COLORS.length];
-  });
 
   const totalCost = data.reduce((s, e) => s + metricValue(e, 'cost'), 0);
   const totalCalls = data.reduce((s, e) => s + metricValue(e, 'calls'), 0);
@@ -179,7 +160,7 @@ export default function Home() {
       {/* Date Range Selector */}
       <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 space-y-4">
         <div className="flex flex-wrap gap-2">
-          {["Today", "WTD", "MTD", "Last 30d", "Last 90d", "All"].map((p) => (
+          {["Last 7d", "Last 30d", "Last 90d", "All"].map((p) => (
             <button
               key={p}
               onClick={() => applyPreset(p)}
@@ -235,7 +216,7 @@ export default function Home() {
                         formatter={tooltipFormatter}
                       />
                       {sortedModels.map((model) => (
-                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
+                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]} />
                       ))}
                     </BarChart>
                   </ResponsiveContainer>
@@ -247,7 +228,7 @@ export default function Home() {
                     <PieChart>
                       <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
                         {modelData.map((entry) => (
-                          <Cell key={entry.name} fill={modelColors[entry.name]} />
+                          <Cell key={entry.name} fill={modelColors[entry.name] || "#71717a"} />
                         ))}
                       </Pie>
                       <Tooltip
@@ -294,4 +275,27 @@ function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toString();
+}
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export async function GET() {
+  const { data, error } = await supabase
+    .from('model_pricing')
+    .select('model, color_code')
+    .not('color_code', 'is', null);
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  const modelColors = data.reduce((acc, item) => {
+    acc[item.model] = item.color_code;
+    return acc;
+  }, {} as Record<string, string>);
+
+  return new Response(JSON.stringify(modelColors), { headers: { 'Content-Type': 'application/json' } });
 }
