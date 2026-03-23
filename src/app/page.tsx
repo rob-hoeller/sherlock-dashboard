@@ -20,7 +20,7 @@ const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6", "#ec4899"
 function getWeekStart() {
   const now = new Date();
   const day = now.getDay();
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  const diff = now.getDate() - day; // Sunday
   return new Date(now.setDate(diff)).toISOString().slice(0, 10);
 }
 
@@ -93,9 +93,6 @@ export default function Home() {
   const handleMetricSelect = (metric: Metric) => {
     setSelectedMetric(metric);
   };
-
-  if (loading) return <Loading />;
-  if (!data.length) return <Empty msg="No usage data found for selected range." />;
 
   const byDayModel: Record<string, Record<string, number>> = {};
   for (const e of data) {
@@ -212,49 +209,61 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
-        <StatCard label="API Calls" value={totalCalls.toLocaleString()} onClick={() => handleMetricSelect('calls')} selected={selectedMetric === 'calls'} />
-        <StatCard label="Input Tokens" value={fmt(totalInput)} onClick={() => handleMetricSelect('input')} selected={selectedMetric === 'input'} />
-        <StatCard label="Output Tokens" value={fmt(totalOutput)} onClick={() => handleMetricSelect('output')} selected={selectedMetric === 'output'} />
-      </div>
+      {loading && <Loading />}
+      
+      {!loading && (
+        <>
+          {data.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
+                <StatCard label="API Calls" value={totalCalls.toLocaleString()} onClick={() => handleMetricSelect('calls')} selected={selectedMetric === 'calls'} />
+                <StatCard label="Input Tokens" value={fmt(totalInput)} onClick={() => handleMetricSelect('input')} selected={selectedMetric === 'input'} />
+                <StatCard label="Output Tokens" value={fmt(totalOutput)} onClick={() => handleMetricSelect('output')} selected={selectedMetric === 'output'} />
+              </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dailyDataWithModels}>
-              <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
-              <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
-              <Tooltip
-                contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                labelStyle={{ color: "#a1a1aa" }}
-                formatter={tooltipFormatter}
-              />
-              {sortedModels.map((model) => (
-                <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={dailyDataWithModels}>
+                      <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
+                      <Tooltip
+                        contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
+                        labelStyle={{ color: "#a1a1aa" }}
+                        formatter={tooltipFormatter}
+                      />
+                      {sortedModels.map((model) => (
+                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model]} radius={[4, 4, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{pieChartTitle}</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                {modelData.map((entry) => (
-                  <Cell key={entry.name} fill={modelColors[entry.name]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                formatter={pieTooltipFormatter}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+                <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+                  <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{pieChartTitle}</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                        {modelData.map((entry) => (
+                          <Cell key={entry.name} fill={modelColors[entry.name]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
+                        formatter={pieTooltipFormatter}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </>
+          ) : (
+            <Empty msg="No usage data for this range." />
+          )}
+        </>
+      )}
     </div>
   );
 }
