@@ -42,14 +42,25 @@ function timeSince(date: Date): string {
   return `${days}d`;
 }
 
+function isImageDataUri(content: string): boolean {
+  return content.startsWith("data:image/");
+}
+
 function downloadDoc(fileName: string, content: string) {
-  const blob = new Blob([content], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
+  if (isImageDataUri(content)) {
+    const a = document.createElement("a");
+    a.href = content;
+    a.download = fileName;
+    a.click();
+  } else {
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 function DocRow({ doc }: { doc: TaskDocument }) {
@@ -79,13 +90,25 @@ function DocRow({ doc }: { doc: TaskDocument }) {
           >
             <Download size={16} />
           </button>
-          <span className="text-xs text-gray-400">{open ? "Hide" : "Show"}</span>
+          <span className="text-xs text-gray-400">
+            {open ? "Hide" : isImageDataUri(doc.content) ? "View" : "Show"}
+          </span>
         </div>
       </button>
       {open && (
-        <pre className="px-3 py-2 text-xs whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-          {doc.content}
-        </pre>
+        isImageDataUri(doc.content) ? (
+          <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800">
+            <img
+              src={doc.content}
+              alt={doc.file_name}
+              className="max-w-full rounded"
+            />
+          </div>
+        ) : (
+          <pre className="px-3 py-2 text-xs whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+            {doc.content}
+          </pre>
+        )
       )}
     </div>
   );
