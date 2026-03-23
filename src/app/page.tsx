@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface UsageRow {
   summary_date: string;
@@ -218,6 +218,13 @@ export default function Home() {
                       {sortedModels.map((model) => (
                         <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]} />
                       ))}
+                      <Legend
+                        iconType="circle"
+                        layout="horizontal"
+                        verticalAlign="top"
+                        align="left"
+                        wrapperStyle={{ fontSize: '12px', color: '#71717a' }}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
