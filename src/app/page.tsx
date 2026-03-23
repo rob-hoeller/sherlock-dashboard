@@ -199,12 +199,12 @@ export default function Home() {
               <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">{taskCounts.needsReview}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-purple-500 dark:text-purple-400">Preview</p>
-              <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">{taskCounts.preview}</p>
-            </div>
-            <div className="text-right">
               <p className="text-xs text-red-500 dark:text-red-400">Blocked</p>
               <p className="text-lg font-semibold text-red-600 dark:text-red-400">{taskCounts.blocked}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-purple-500 dark:text-purple-400">Preview</p>
+              <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">{taskCounts.preview}</p>
             </div>
           </div>
         </div>
