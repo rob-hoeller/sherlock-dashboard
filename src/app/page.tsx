@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface UsageRow {
@@ -45,6 +46,8 @@ export default function Home() {
   const [selectedMetric, setSelectedMetric] = useState<Metric>('calls');
   const [modelColors, setModelColors] = useState<Record<string, string>>({});
   const [isDark, setIsDark] = useState(false);
+  const router = useRouter();
+  const [taskCounts, setTaskCounts] = useState({ active: 0, needsReview: 0, blocked: 0 });
 
   useEffect(() => {
     setLoading(true);
@@ -66,6 +69,21 @@ export default function Home() {
     const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    async function fetchTaskCounts() {
+      try {
+        const res = await fetch("/api/tasks");
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const active = data.filter((t: { status: string }) => t.status !== "completed" && t.status !== "cancelled").length;
+        const needsReview = data.filter((t: { status: string }) => t.status === "needs_review").length;
+        const blocked = data.filter((t: { status: string }) => t.status === "blocked").length;
+        setTaskCounts({ active, needsReview, blocked });
+      } catch { /* ignore */ }
+    }
+    fetchTaskCounts();
   }, []);
 
   const applyPreset = (p: string) => {
@@ -282,6 +300,28 @@ export default function Home() {
           )}
         </>
       )}
+
+      <div
+        className="mt-4 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer transition-colors"
+        onClick={() => router.push("/tasks")}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Tasks</p>
+            <p className="text-2xl font-bold mt-1 text-zinc-900 dark:text-zinc-100">{taskCounts.active}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="text-right">
+              <p className="text-xs text-amber-500 dark:text-amber-400">Needs Review</p>
+              <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">{taskCounts.needsReview}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-red-500 dark:text-red-400">Blocked</p>
+              <p className="text-lg font-semibold text-red-600 dark:text-red-400">{taskCounts.blocked}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
