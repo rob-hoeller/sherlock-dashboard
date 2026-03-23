@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FileText, ScrollText, Settings } from "lucide-react";
+import { BarChart3, FileText, ScrollText, Settings, ClipboardList } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Usage", icon: BarChart3 },
   { href: "/core", label: "Core Files", icon: Settings },
   { href: "/digests", label: "Digests", icon: ScrollText },
   { href: "/models", label: "Model Calls", icon: FileText },
+  { href: "/tasks", label: "Tasks", icon: ClipboardList }, // Added Tasks link
 ];
 
 export function Sidebar() {
