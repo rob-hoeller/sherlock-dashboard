@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Clock } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
+import RecentActivityPanel from "@/components/RecentActivityPanel";
 import { supabaseClient } from "@/lib/supabase";
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -114,6 +115,7 @@ export default function TasksPage() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [completedDays, setCompletedDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   useEffect(() => {
     async function fetchTasks() {
@@ -215,6 +217,13 @@ export default function TasksPage() {
           >
             {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
           </button>
+          <button
+            onClick={() => setActivityOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
+          >
+            <Clock size={16} />
+            Recent Activity
+          </button>
         </div>
       </div>
 
@@ -278,6 +287,16 @@ export default function TasksPage() {
 
       {/* Task Detail Panel */}
       <TaskDetailPanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
+
+      {/* Recent Activity Panel */}
+      <RecentActivityPanel
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        onSelectTask={(taskId) => {
+          setActivityOpen(false);
+          setSelectedTaskId(taskId);
+        }}
+      />
     </div>
   );
 }
