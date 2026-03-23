@@ -56,7 +56,7 @@ export default function Home() {
   const [startDate, setStartDate] = useState(getWeekStart());
   const [endDate, setEndDate] = useState(getToday());
   const [preset, setPreset] = useState("WTD");
-  const [selectedMetric, setSelectedMetric] = useState<Metric>('cost');
+  const [selectedMetric, setSelectedMetric] = useState<Metric>('calls');
 
   useEffect(() => {
     setLoading(true);
@@ -216,10 +216,10 @@ export default function Home() {
           {data.length > 0 ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
                 <StatCard label="API Calls" value={totalCalls.toLocaleString()} onClick={() => handleMetricSelect('calls')} selected={selectedMetric === 'calls'} />
                 <StatCard label="Input Tokens" value={fmt(totalInput)} onClick={() => handleMetricSelect('input')} selected={selectedMetric === 'input'} />
                 <StatCard label="Output Tokens" value={fmt(totalOutput)} onClick={() => handleMetricSelect('output')} selected={selectedMetric === 'output'} />
+                <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
               </div>
 
               <div className="grid lg:grid-cols-3 gap-6">
