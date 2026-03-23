@@ -204,10 +204,10 @@ export default function Home() {
               </div>
 
               <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
+                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 mb-8">
                   <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={dailyDataWithModels}>
+                    <BarChart data={dailyDataWithModels} margin={{ bottom: 40 }}>
                       <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
                       <Tooltip
@@ -221,9 +221,9 @@ export default function Home() {
                       <Legend
                         iconType="circle"
                         layout="horizontal"
-                        verticalAlign="top"
+                        verticalAlign="bottom"
                         align="left"
-                        wrapperStyle={{ fontSize: '12px', color: '#71717a' }}
+                        wrapperStyle={{ fontSize: '12px', color: '#71717a', paddingTop: "16px" }}
                       />
                     </BarChart>
                   </ResponsiveContainer>
