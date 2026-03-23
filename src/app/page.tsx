@@ -44,6 +44,7 @@ export default function Home() {
   const [preset, setPreset] = useState("Last 7d");
   const [selectedMetric, setSelectedMetric] = useState<Metric>('calls');
   const [modelColors, setModelColors] = useState<Record<string, string>>({});
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -57,6 +58,14 @@ export default function Home() {
     fetch('/api/colors')
       .then((r) => r.json())
       .then((colors) => setModelColors(colors));
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsDark(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   const applyPreset = (p: string) => {
@@ -211,8 +220,18 @@ export default function Home() {
                       <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
                       <Tooltip
-                        contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
-                        labelStyle={{ color: "#a1a1aa" }}
+                        contentStyle={{
+                          background: isDark ? "#18181b" : "#ffffff",
+                          border: `1px solid ${isDark ? "#27272a" : "#e4e4e7"}`,
+                          borderRadius: 8,
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
+                        labelStyle={{
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
+                        itemStyle={{
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
                         formatter={tooltipFormatter}
                       />
                       {sortedModels.map((model) => (
@@ -239,7 +258,18 @@ export default function Home() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
+                        contentStyle={{
+                          background: isDark ? "#18181b" : "#ffffff",
+                          border: `1px solid ${isDark ? "#27272a" : "#e4e4e7"}`,
+                          borderRadius: 8,
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
+                        labelStyle={{
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
+                        itemStyle={{
+                          color: isDark ? "#fafafa" : "#18181b",
+                        }}
                         formatter={pieTooltipFormatter}
                       />
                     </PieChart>
