@@ -203,7 +203,6 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
-        <button onClick={() => setShowNewTask(true)} className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"><Plus size={16} /><span className="hidden sm:inline">New Task</span></button>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -215,6 +214,13 @@ export default function TasksPage() {
               className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
             />
           </div>
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">New Task</span>
+          </button>
           <button
             onClick={() => setShowCancelled(!showCancelled)}
             className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
