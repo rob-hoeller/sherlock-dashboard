@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { ScrollText, Calendar, Search, X, Download } from "lucide-react";
+import { ScrollText, Calendar, Search, X, Download, Eye, Code } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface Digest {
   file_path: string;
@@ -114,6 +115,8 @@ export default function DigestsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">📋 Daily Digests</h1>
@@ -195,10 +198,21 @@ export default function DigestsPage() {
                 >
                   <Download size={16} />
                 </button>
+                <button
+                  onClick={() => setViewMode(viewMode === "rendered" ? "raw" : "rendered")}
+                  className="ml-2 p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  title={viewMode === "rendered" ? "Show raw markdown" : "Show rendered"}
+                >
+                  {viewMode === "rendered" ? <Code size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-              <pre ref={contentRef} className="text-sm text-zinc-900 dark:text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
-                {content}
-              </pre>
+              {viewMode === "rendered" && !debouncedSearchTerm ? (
+                <MarkdownRenderer content={content} />
+              ) : (
+                <pre ref={contentRef} className="text-sm text-zinc-900 dark:text-zinc-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
+                  {content}
+                </pre>
+              )}
             </>
           ) : (
             <p className="text-zinc-500 dark:text-zinc-600 text-sm text-center py-16">Select a digest to view</p>

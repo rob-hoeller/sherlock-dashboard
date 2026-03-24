@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
 import { X, GithubIcon, ExternalLink, Download } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface TaskDetailPanelProps {
   taskId: string | null;
@@ -105,9 +106,9 @@ function DocRow({ doc }: { doc: TaskDocument }) {
             />
           </div>
         ) : (
-          <pre className="px-3 py-2 text-xs whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-            {doc.content}
-          </pre>
+          <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 max-h-96 overflow-y-auto">
+            <MarkdownRenderer content={doc.content} className="text-xs" />
+          </div>
         )
       )}
     </div>
@@ -211,7 +212,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
 
       {/* Panel */}
       <div
-        className={`absolute right-0 top-0 h-full w-full sm:w-[480px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl transition-transform duration-300 ${
+        className={`absolute right-0 top-0 h-full w-full sm:w-[640px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -261,9 +262,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                   Description
                 </h3>
-                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {detail.description || "No description"}
-                </p>
+                <MarkdownRenderer content={detail.description || "No description"} />
               </section>
 
               {/* Links */}
@@ -314,9 +313,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                   <div className="text-sm font-semibold text-red-800 dark:text-red-200">
                     Blocked
                   </div>
-                  <div className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
-                    {detail.blocked_reason}
-                  </div>
+                  <MarkdownRenderer content={detail.blocked_reason} />
                 </section>
               )}
 

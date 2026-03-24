@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Save, FileText, Eye, Pencil } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 const FILES = ["SOUL.md", "AGENTS.md", "USER.md", "IDENTITY.md", "TOOLS.md", "HEARTBEAT.md", "MEMORY.md"];
 
@@ -87,9 +88,9 @@ export default function GoverningPage() {
             spellCheck={false}
           />
         ) : (
-          <pre className="p-4 font-mono text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap max-h-[70vh] overflow-auto">
-            {content}
-          </pre>
+          <div className="p-4 max-h-[70vh] overflow-auto">
+            <MarkdownRenderer content={content} />
+          </div>
         )}
       </div>
     </div>
