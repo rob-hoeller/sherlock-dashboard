@@ -80,7 +80,7 @@ export default function ProfilePage() {
     <div className="max-w-lg mx-auto">
       <h1 className="text-3xl font-bold mb-8">Profile</h1>
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 space-y-6">
+      <form className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 space-y-6" autoComplete="off">
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Email
@@ -111,6 +111,7 @@ export default function ProfilePage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            autoComplete="new-password"
           />
         </div>
 
@@ -123,6 +124,7 @@ export default function ProfilePage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            autoComplete="new-password"
           />
         </div>
 
@@ -138,7 +140,7 @@ export default function ProfilePage() {
             {message}
           </p>
         )}
-      </div>
+      </form>
     </div>
   )
 }

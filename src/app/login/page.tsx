@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
-import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -41,7 +40,7 @@ export default function LoginPage() {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 max-w-sm w-full">
       <div className="text-center mb-6">
-        <LogIn className="mx-auto h-12 w-12 text-gray-500" />
+        <span className="text-5xl">🕵️</span>
         <h2 className="mt-4 text-2xl font-bold">Sherlock Dashboard</h2>
       </div>
       <form onSubmit={handleLogin}>
