@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X, Clock } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Clock, Plus } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import RecentActivityPanel from "@/components/RecentActivityPanel";
+import NewTaskModal from "@/components/NewTaskModal";
 import { supabaseClient } from "@/lib/supabase";
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -116,29 +117,31 @@ export default function TasksPage() {
   const [completedDays, setCompletedDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [showNewTask, setShowNewTask] = useState(false);
+
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [allRes, completedRes] = await Promise.all([
+        fetch("/api/tasks"),
+        fetch(`/api/tasks?status=completed&completedDays=${completedDays}`),
+      ]);
+      const allData: Task[] = await allRes.json();
+      const completedData: Task[] = await completedRes.json();
+
+      // Merge: non-completed from all + completed from filtered query
+      const nonCompleted = allData.filter((t) => t.status !== "completed");
+      setTasks([...nonCompleted, ...completedData]);
+    } catch {
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [completedDays]);
 
   useEffect(() => {
-    async function fetchTasks() {
-      setLoading(true);
-      try {
-        const [allRes, completedRes] = await Promise.all([
-          fetch("/api/tasks"),
-          fetch(`/api/tasks?status=completed&completedDays=${completedDays}`),
-        ]);
-        const allData: Task[] = await allRes.json();
-        const completedData: Task[] = await completedRes.json();
-
-        // Merge: non-completed from all + completed from filtered query
-        const nonCompleted = allData.filter((t) => t.status !== "completed");
-        setTasks([...nonCompleted, ...completedData]);
-      } catch {
-        setTasks([]);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchTasks();
-  }, [completedDays]);
+  }, [fetchTasks]);
 
   useEffect(() => {
     const channel = supabaseClient
@@ -287,6 +290,13 @@ export default function TasksPage() {
 
       {/* Task Detail Panel */}
       <TaskDetailPanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
+
+      {/* New Task Modal */}
+      <NewTaskModal
+        open={showNewTask}
+        onClose={() => setShowNewTask(false)}
+        onCreated={fetchTasks}
+      />
 
       {/* Recent Activity Panel */}
       <RecentActivityPanel
