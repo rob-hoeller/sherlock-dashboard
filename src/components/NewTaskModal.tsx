@@ -255,7 +255,7 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Submitting..." : "Submit Task"}
           </button>
