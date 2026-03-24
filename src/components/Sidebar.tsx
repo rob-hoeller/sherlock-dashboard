@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, FileText, ScrollText, Settings, ClipboardList } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { BarChart3, FileText, ScrollText, Settings, ClipboardList, User, LogOut } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 const nav = [
   { href: "/", label: "Usage", icon: BarChart3 },
@@ -13,6 +15,57 @@ const nav = [
 
 export function Sidebar() {
   const path = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+
+    getUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        router.push("/login");
+      }
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !(dropdownRef.current as any).contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const signOut = async () => {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 sm:w-56 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col z-50">
       <div className="p-3 sm:p-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -40,8 +93,35 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-3 sm:p-4 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500 hidden sm:block">
-        Baker Street v0.1
+      <div
+        ref={dropdownRef}
+        className="p-3 sm:p-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between cursor-pointer"
+        onClick={toggleDropdown}
+      >
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-zinc-600 text-white flex items-center justify-center mr-2">
+            {user?.user_metadata.display_name ? user.user_metadata.display_name[0] : user?.email[0]}
+          </div>
+          <span className="hidden sm:block text-sm truncate">{user?.user_metadata.display_name || user?.email}</span>
+        </div>
+        {isOpen && (
+          <div className="absolute bottom-16 right-4 sm:right-8 bg-white dark:bg-zinc-800 shadow-lg rounded-lg border border-zinc-200 dark:border-zinc-700 w-32">
+            <Link
+              href="/profile"
+              className="block px-4 py-2 text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+            >
+              <User size={16} />
+              Profile
+            </Link>
+            <button
+              onClick={signOut}
+              className="block px-4 py-2 text-sm text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2 w-full text-left"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
