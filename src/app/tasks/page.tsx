@@ -54,7 +54,7 @@ function timeSince(date: Date): string {
 function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void }) {
   return (
     <div
-      className="mb-3 p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 cursor-pointer"
+      className="mb-3 p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer dark:hover:shadow-lg"
       onClick={() => onClick(task.id)}
     >
       <div className="flex justify-between items-start gap-2">
