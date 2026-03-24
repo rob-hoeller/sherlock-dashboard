@@ -216,7 +216,7 @@ export default function TasksPage() {
           </div>
           <button
             onClick={() => setShowNewTask(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">New Task</span>
