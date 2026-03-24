@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
-import { X, GithubIcon, ExternalLink, Download } from "lucide-react";
+import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import FeedbackDialog from "@/components/FeedbackDialog";
 
 interface TaskDetailPanelProps {
   taskId: string | null;
@@ -142,6 +143,10 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackAction, setFeedbackAction] = useState<string>("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +182,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
     return () => {
       cancelled = true;
     };
-  }, [taskId]);
+  }, [taskId, refreshKey]);
 
   const open = Boolean(taskId);
 
@@ -196,6 +201,32 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
       setError(e instanceof Error ? e.message : "Failed to fetch Vercel preview");
     }
   }
+
+  const handleAction = async (actionType: string, feedback?: string, files?: Array<{ name: string; content: string; doc_type: string }>) => {
+    if (!detail) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/tasks/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: detail.id,
+          action_type: actionType,
+          payload: {
+            feedback: feedback || undefined,
+            files: files && files.length > 0 ? files : undefined,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error("Action failed");
+      setFeedbackOpen(false);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      // Error handling — could show inline error
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div
@@ -239,6 +270,62 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
 
           {detail && (
             <>
+              {/* Action Buttons */}
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                {detail.status === "needs_review" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAction("approve")}
+                      disabled={actionLoading}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <Check size={16} />
+                      Approve Plan
+                    </button>
+                    <button
+                      onClick={() => { setFeedbackAction("request_changes"); setFeedbackOpen(true); }}
+                      disabled={actionLoading}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <MessageSquare size={16} />
+                      Request Changes
+                    </button>
+                  </div>
+                )}
+
+                {detail.status === "blocked" && (
+                  <button
+                    onClick={() => { setFeedbackAction("resolve_blocker"); setFeedbackOpen(true); }}
+                    disabled={actionLoading}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Unlock size={16} />
+                    Resolve Blocker
+                  </button>
+                )}
+
+                {detail.status === "preview" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAction("complete")}
+                      disabled={actionLoading}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <Check size={16} />
+                      Complete
+                    </button>
+                    <button
+                      onClick={() => { setFeedbackAction("request_preview_changes"); setFeedbackOpen(true); }}
+                      disabled={actionLoading}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <MessageSquare size={16} />
+                      Request Changes
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span
@@ -352,6 +439,26 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
           )}
         </div>
       </div>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        onSubmit={(feedback, files) => handleAction(feedbackAction, feedback, files)}
+        title={
+          feedbackAction === "request_changes" ? "Request Changes" :
+          feedbackAction === "resolve_blocker" ? "Resolve Blocker" :
+          feedbackAction === "request_preview_changes" ? "Request Changes" : "Feedback"
+        }
+        placeholder={
+          feedbackAction === "request_changes" ? "Describe the changes needed..." :
+          feedbackAction === "resolve_blocker" ? "Describe how the blocker was resolved..." :
+          feedbackAction === "request_preview_changes" ? "Describe the changes needed..." : ""
+        }
+        showFileUpload={feedbackAction === "request_preview_changes" || feedbackAction === "request_changes"}
+        submitLabel="Submit"
+        loading={actionLoading}
+      />
     </div>
   );
 }
