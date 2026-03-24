@@ -169,6 +169,30 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    case 'cancel': {
+      // Update task status
+      const { error: cancelError } = await supabaseAdmin
+        .from("tasks")
+        .update({ status: "cancelled" })
+        .eq("id", taskId);
+
+      if (cancelError) return NextResponse.json({ error: cancelError.message }, { status: 500 });
+
+      // Record history
+      const { data: currentTask } = await supabaseAdmin
+        .from("tasks").select("status").eq("id", taskId).single();
+
+      await supabaseAdmin.from("task_history").insert({
+        task_id: taskId,
+        previous_status: currentTask?.status || null,
+        new_status: "cancelled",
+        changed_by: userName || "dashboard",
+        note: "Cancelled via dashboard",
+      });
+
+      break;
+    }
+
     default:
       return NextResponse.json({ error: `Unknown action_type: ${action_type}` }, { status: 400 });
   }

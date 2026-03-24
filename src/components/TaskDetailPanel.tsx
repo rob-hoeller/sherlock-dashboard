@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
-import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock } from "lucide-react";
+import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock, XCircle } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import FeedbackDialog from "@/components/FeedbackDialog";
 
@@ -323,6 +323,21 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                       Request Changes
                     </button>
                   </div>
+                )}
+
+                {detail.status !== "cancelled" && detail.status !== "completed" && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to cancel this task?")) {
+                        handleAction("cancel");
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 mt-2"
+                  >
+                    <XCircle size={16} />
+                    Cancel Task
+                  </button>
                 )}
               </div>
 
