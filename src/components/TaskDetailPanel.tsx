@@ -15,9 +15,12 @@ const STATUS_BADGE: Record<TaskStatus, string> = {
   planning: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200",
   needs_review: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
   approved: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  on_deck: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   in_process: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  commit_ready: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
   blocked: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   preview: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  merged: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
   completed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   cancelled: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
 };
@@ -26,9 +29,12 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   planning: "Planning",
   needs_review: "Needs Review",
   approved: "Approved",
+  on_deck: "On Deck",
   in_process: "In Process",
+  commit_ready: "Commit Ready",
   blocked: "Blocked",
   preview: "Preview",
+  merged: "Merged",
   completed: "Completed",
   cancelled: "Cancelled",
 };
@@ -317,7 +323,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                     >
                       <Check size={16} />
-                      Complete
+                      Mark as Merged
                     </button>
                     <button
                       onClick={() => { setFeedbackAction("request_preview_changes"); setFeedbackOpen(true); }}
