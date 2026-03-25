@@ -70,15 +70,6 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
         <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate flex-1">
           {task.name}
         </h3>
-        <span
-          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-            task.task_type === "feature"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-              : "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
-          }`}
-        >
-          {task.task_type}
-        </span>
       </div>
 
       {task.branch_name && (
@@ -110,7 +101,19 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
             <ExternalLink size={12} /> Preview
           </a>
         )}
-        <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span
+          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+            task.task_type === "feature"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              : "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
+          }`}
+        >
+          {task.task_type}
+        </span>
+        <span className="text-[10px] text-gray-400 dark:text-gray-500">
           {timeSince(new Date(task.updated_at))} ago
         </span>
       </div>
