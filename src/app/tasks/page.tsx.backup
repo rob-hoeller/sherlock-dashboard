@@ -12,12 +12,9 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
   planning: "border-gray-400 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
   needs_review: "border-amber-400 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-200",
   approved: "border-blue-400 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200",
-  on_deck: "border-orange-400 bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200",
   in_process: "border-indigo-400 bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200",
-  commit_ready: "border-teal-400 bg-teal-100 dark:bg-teal-800 text-teal-800 dark:text-teal-200",
   blocked: "border-red-400 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200",
   preview: "border-purple-400 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200",
-  merged: "border-emerald-400 bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200",
   completed: "border-green-400 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200",
   cancelled: "border-neutral-400 bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400",
 };
@@ -26,12 +23,9 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   planning: "Planning",
   needs_review: "Needs Review",
   approved: "Approved",
-  on_deck: "On Deck",
   in_process: "In Process",
-  commit_ready: "Commit Ready",
   blocked: "Blocked",
   preview: "Preview",
-  merged: "Merged",
   completed: "Completed",
   cancelled: "Cancelled",
 };
@@ -40,12 +34,9 @@ const COLUMN_ORDER: TaskStatus[] = [
   "planning",
   "needs_review",
   "approved",
-  "on_deck",
   "in_process",
-  "commit_ready",
   "blocked",
   "preview",
-  "merged",
   "completed",
 ];
 

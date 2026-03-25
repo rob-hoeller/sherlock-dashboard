@@ -2,9 +2,12 @@ export type TaskStatus =
   | "planning"
   | "needs_review"
   | "approved"
+  | "on_deck"
   | "in_process"
+  | "commit_ready"
   | "blocked"
   | "preview"
+  | "merged"
   | "completed"
   | "cancelled";
 
@@ -24,6 +27,7 @@ export interface Task {
   vercel_deployment_id: string | null;
   github_repo: string;
   blocked_reason: string | null;
+  retry_count: number;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
