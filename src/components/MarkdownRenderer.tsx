@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -13,6 +14,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
   return (
     <div className={`markdown-content text-sm text-zinc-900 dark:text-zinc-100 ${className}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => <h1 className="text-2xl font-bold mt-6 mb-3">{children}</h1>,
           h2: ({ children }) => <h2 className="text-xl font-bold mt-5 mb-2">{children}</h2>,
