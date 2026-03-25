@@ -44,7 +44,7 @@ export default function DigestsPage() {
       const data = await res.json();
       if (!Array.isArray(data)) return;
       setDigests(data);
-      if (data.length > 0 && !selected) {
+      if (data.length > 0 && !selected && window.innerWidth >= 1024) {
         const dateMatch = data[0].file_name.match(/(\d{4}-\d{2}-\d{2})/);
         if (dateMatch) loadDigest(dateMatch[1]);
       }
