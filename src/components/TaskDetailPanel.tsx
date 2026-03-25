@@ -327,9 +327,10 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
 
                 {detail.status !== "cancelled" && detail.status !== "completed" && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (window.confirm("Are you sure you want to cancel this task?")) {
-                        handleAction("cancel");
+                        await handleAction("cancel");
+                        onClose();
                       }
                     }}
                     disabled={actionLoading}
