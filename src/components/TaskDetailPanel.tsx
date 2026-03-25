@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
-import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock, XCircle } from "lucide-react";
+import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock, RefreshCw, XCircle } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import FeedbackDialog from "@/components/FeedbackDialog";
 
@@ -147,6 +147,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackAction, setFeedbackAction] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [fetchingPreview, setFetchingPreview] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,8 +188,10 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
   const open = Boolean(taskId);
 
   async function fetchVercelPreview() {
-    if (!detail?.id || !detail.branch_name) return;
-
+    if (!detail?.id || !detail.branch_name || fetchingPreview) return;
+    setFetchingPreview(true);
+    // Null out old values first
+    setDetail((prev) => (prev ? { ...prev, vercel_preview_url: null, vercel_deployment_id: null } : prev));
     try {
       const res = await fetch(`/api/tasks/${detail.id}/vercel`, { method: "POST" });
       if (!res.ok) {
@@ -196,9 +199,11 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
         throw new Error(body?.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setDetail((prev) => (prev ? { ...prev, vercel_preview_url: data.vercel_preview_url } : prev));
+      setDetail((prev) => (prev ? { ...prev, vercel_preview_url: data.vercel_preview_url, vercel_deployment_id: data.vercel_deployment_id } : prev));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch Vercel preview");
+    } finally {
+      setFetchingPreview(false);
     }
   }
 
@@ -386,7 +391,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                         <span className="truncate">{detail.pr_url}</span>
                       </a>
                     )}
-                    {detail.vercel_preview_url ? (
+                    {detail.vercel_preview_url && (
                       <a
                         href={detail.vercel_preview_url}
                         target="_blank"
@@ -396,16 +401,18 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                         <ExternalLink size={16} />
                         <span className="truncate">{detail.vercel_preview_url}</span>
                       </a>
-                    ) : detail.branch_name ? (
+                    )}
+                    {detail.branch_name && (
                       <button
                         type="button"
                         onClick={fetchVercelPreview}
-                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        disabled={fetchingPreview}
+                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                       >
-                        <ExternalLink size={16} />
-                        Fetch Preview
+                        <RefreshCw size={14} className={fetchingPreview ? "animate-spin" : ""} />
+                        {fetchingPreview ? "Fetching..." : "Refresh Preview URL"}
                       </button>
-                    ) : null}
+                    )}
                   </div>
                 </section>
               )}

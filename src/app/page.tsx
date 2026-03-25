@@ -179,7 +179,7 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-14 md:pt-0">
       <div>
         <div
           className="flex items-center gap-6 bg-white dark:bg-zinc-900 rounded-xl px-5 py-3 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer transition-colors w-fit"
@@ -245,14 +245,14 @@ export default function Home() {
         <>
           {data.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard label="API Calls" value={totalCalls.toLocaleString()} onClick={() => handleMetricSelect('calls')} selected={selectedMetric === 'calls'} />
                 <StatCard label="Input Tokens" value={fmt(totalInput)} onClick={() => handleMetricSelect('input')} selected={selectedMetric === 'input'} />
                 <StatCard label="Output Tokens" value={fmt(totalOutput)} onClick={() => handleMetricSelect('output')} selected={selectedMetric === 'output'} />
                 <StatCard label="Total Cost" value={`$${totalCost.toFixed(2)}`} onClick={() => handleMetricSelect('cost')} selected={selectedMetric === 'cost'} />
               </div>
 
-              <div className="grid lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
                   <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
                   <ResponsiveContainer width="100%" height={400}>
@@ -354,27 +354,4 @@ function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toString();
-}
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-export async function GET() {
-  const { data, error } = await supabase
-    .from('model_pricing')
-    .select('model, color_code')
-    .not('color_code', 'is', null);
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-
-  const modelColors = data.reduce((acc, item) => {
-    acc[item.model] = item.color_code;
-    return acc;
-  }, {} as Record<string, string>);
-
-  return new Response(JSON.stringify(modelColors), { headers: { 'Content-Type': 'application/json' } });
 }
