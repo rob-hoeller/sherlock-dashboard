@@ -248,7 +248,7 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
 
       {/* Panel */}
       <div
-        className={`absolute right-0 top-0 h-full w-full sm:w-[640px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl transition-transform duration-300 ${
+        className={`absolute right-0 top-0 h-full w-full md:w-[480px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar"; // Fixed import statement
+import BottomNav from "@/components/BottomNav";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,9 +15,10 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main className="flex-1 ml-16 sm:ml-56 p-4 sm:p-8 overflow-auto">
+      <main className="flex-1 md:ml-56 p-4 sm:p-8 pb-20 md:pb-8 overflow-auto">
         {children}
       </main>
+      <BottomNav />
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X, Clock, Plus } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Clock, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import RecentActivityPanel from "@/components/RecentActivityPanel";
 import NewTaskModal from "@/components/NewTaskModal";
@@ -118,6 +118,7 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -162,6 +163,14 @@ export default function TasksPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const initial: Record<string, boolean> = {};
+    for (const status of columns) {
+      initial[status] = (grouped[status]?.length || 0) > 0;
+    }
+    setExpandedGroups(initial);
+  }, [tasks, showCancelled]);
+
   // Client-side search filter
   const filtered = searchTerm
     ? tasks.filter(
@@ -190,6 +199,10 @@ export default function TasksPage() {
     setCompletedDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
   };
 
+  const toggleGroup = (status: string) => {
+    setExpandedGroups(prev => ({ ...prev, [status]: !prev[status] }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
@@ -199,34 +212,38 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative pt-14 md:pt-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNewTask(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">New Task</span>
+            </button>
+            <button
+              onClick={() => setShowCancelled(!showCancelled)}
+              className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+              className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
             />
           </div>
-          <button
-            onClick={() => setShowNewTask(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">New Task</span>
-          </button>
-          <button
-            onClick={() => setShowCancelled(!showCancelled)}
-            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
-          </button>
           <button
             onClick={() => setActivityOpen(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
@@ -243,56 +260,88 @@ export default function TasksPage() {
           No tasks yet. Create one via Telegram.
         </div>
       ) : (
-        <div className="flex-1 overflow-x-auto p-4">
-          <div className="flex gap-4 h-full min-w-max">
-            {columns.map((status) => {
-              const columnTasks = grouped[status];
-              return (
-                <div
-                  key={status}
-                  className="flex flex-col w-[280px] shrink-0 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                  {/* Column header */}
+        <>
+          <div className="hidden md:block flex-1 overflow-x-auto p-4">
+            <div className="flex gap-4 h-full min-w-max">
+              {columns.map((status) => {
+                const columnTasks = grouped[status];
+                return (
                   <div
-                    className={`px-3 py-2 rounded-t-lg border-b-2 ${STATUS_COLORS[status]} text-sm font-semibold flex justify-between items-center`}
+                    key={status}
+                    className="flex flex-col w-[240px] md:w-[280px] shrink-0 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
                   >
-                    <span>{STATUS_LABELS[status]}</span>
-                    <span className="text-xs font-normal opacity-70">
-                      ({columnTasks.length})
-                    </span>
-                  </div>
+                    {/* Column header */}
+                    <div
+                      className={`px-3 py-2 rounded-t-lg border-b-2 ${STATUS_COLORS[status]} text-sm font-semibold flex justify-between items-center`}
+                    >
+                      <span>{STATUS_LABELS[status]}</span>
+                      <span className="text-xs font-normal opacity-70">
+                        ({columnTasks.length})
+                      </span>
+                    </div>
 
-                  {/* Cards */}
-                  <div className="flex-1 overflow-y-auto p-2 min-h-0" style={{ maxHeight: "calc(100vh - 220px)" }}>
-                    {columnTasks.length === 0 ? (
-                      <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-8">
-                        No tasks
-                      </div>
-                    ) : (
-                      columnTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
-                      ))
+                    {/* Cards */}
+                    <div className="flex-1 overflow-y-auto p-2 min-h-0" style={{ maxHeight: "calc(100vh - 220px)" }}>
+                      {columnTasks.length === 0 ? (
+                        <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-8">
+                          No tasks
+                        </div>
+                      ) : (
+                        columnTasks.map((task) => (
+                          <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
+                        ))
+                      )}
+                    </div>
+
+                    {/* Completed show more */}
+                    {status === "completed" && completedDays < 9999 && (
+                      <button
+                        onClick={handleShowMore}
+                        className="px-3 py-2 text-xs text-center border-t border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg"
+                      >
+                        {completedDays === 7
+                          ? "Show 30 days"
+                          : completedDays === 30
+                          ? "Show 90 days"
+                          : "Show all"}
+                      </button>
                     )}
                   </div>
+                );
+              })}
+            </div>
+          </div>
 
-                  {/* Completed show more */}
-                  {status === "completed" && completedDays < 9999 && (
-                    <button
-                      onClick={handleShowMore}
-                      className="px-3 py-2 text-xs text-center border-t border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg"
-                    >
-                      {completedDays === 7
-                        ? "Show 30 days"
-                        : completedDays === 30
-                        ? "Show 90 days"
-                        : "Show all"}
-                    </button>
+          {/* Mobile list view */}
+          <div className="md:hidden flex-1 overflow-y-auto p-3 space-y-2">
+            {columns.map((status) => {
+              const columnTasks = grouped[status];
+              const isExpanded = expandedGroups[status] ?? false;
+              return (
+                <div key={status} className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <button
+                    onClick={() => toggleGroup(status)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 ${STATUS_COLORS[status]} text-sm font-semibold`}
+                  >
+                    <span>{STATUS_LABELS[status]} ({columnTasks.length})</span>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
+                  {isExpanded && (
+                    <div className="p-2 space-y-2 bg-gray-50 dark:bg-gray-800/50">
+                      {columnTasks.length === 0 ? (
+                        <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-4">No tasks</div>
+                      ) : (
+                        columnTasks.map((task) => (
+                          <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
+                        ))
+                      )}
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
-        </div>
+        </>
       )}
 
       {/* Task Detail Panel */}
