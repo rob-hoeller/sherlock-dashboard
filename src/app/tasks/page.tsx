@@ -67,7 +67,7 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
       onClick={() => onClick(task.id)}
     >
       <div className="flex justify-between items-start gap-2">
-        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate flex-1">
+        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate flex-1" title={task.name}>
           {task.name}
         </h3>
       </div>
@@ -281,7 +281,7 @@ export default function TasksPage() {
                 return (
                   <div
                     key={status}
-                    className="flex flex-col w-[240px] md:w-[280px] shrink-0 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
+                    className="flex flex-col w-[250px] shrink-0 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
                   >
                     {/* Column header */}
                     <div
