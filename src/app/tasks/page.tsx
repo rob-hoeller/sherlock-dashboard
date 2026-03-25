@@ -214,42 +214,40 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col h-full relative pt-14 md:pt-0">
       {/* Header */}
-      <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowNewTask(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus size={16} />
-              <span className="hidden sm:inline">New Task</span>
-            </button>
-            <button
-              onClick={() => setShowCancelled(!showCancelled)}
-              className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
-            </button>
-          </div>
+      <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4">
+        {/* Search bar */}
+        <div className="relative flex-1 md:max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          />
         </div>
+        
+        {/* Button group */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
-            />
-          </div>
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">New Task</span>
+          </button>
+          <button
+            onClick={() => setShowCancelled(!showCancelled)}
+            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
+          </button>
           <button
             onClick={() => setActivityOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
           >
             <Clock size={16} />
-            Recent Activity
+            <span className="hidden sm:inline">Recent Activity</span>
           </button>
         </div>
       </div>
