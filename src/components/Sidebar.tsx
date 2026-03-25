@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, FileText, ScrollText, Settings, ClipboardList, User, LogOut, Menu } from "lucide-react";
+import { BarChart3, FileText, ScrollText, Settings, ClipboardList, User, LogOut } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
-const nav = [
+export const nav = [
   { href: "/", label: "Usage", icon: BarChart3 },
   { href: "/core", label: "Core Files", icon: Settings },
   { href: "/digests", label: "Digests", icon: ScrollText },
@@ -13,12 +13,7 @@ const nav = [
   { href: "/tasks", label: "Tasks", icon: ClipboardList }, // Added Tasks link
 ];
 
-interface SidebarProps {
-  mobileOpen: boolean;
-  onMobileClose: () => void;
-}
-
-export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar() {
   const path = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -73,19 +68,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
-          onClick={onMobileClose}
-        />
-      )}
-      <aside className={`
-        fixed left-0 top-0 h-screen bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col z-50
-        transition-transform duration-200 ease-in-out
-        w-56
-        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:w-56
-      `}>
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-56 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex-col z-50">
         <div className="p-3 sm:p-4 border-b border-zinc-200 dark:border-zinc-800">
           <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
             🕵️‍♂️ Sherlock
