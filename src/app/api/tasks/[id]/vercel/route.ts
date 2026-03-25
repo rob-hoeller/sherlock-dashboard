@@ -67,5 +67,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const updatedTask = updatedTaskData as Task;
 
   // Return the updated task
-  return NextResponse.json(updatedTask, { status: 200 });
+  return NextResponse.json(updatedTask, { status: 200 });}
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return POST(request, { params });
 }
