@@ -129,14 +129,14 @@ export async function POST(req: NextRequest) {
         .from("tasks").select("status").eq("id", taskId).single();
 
       await supabaseAdmin.from("tasks")
-        .update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", taskId);
+        .update({ status: "merged" }).eq("id", taskId);
 
       await supabaseAdmin.from("task_history").insert({
         task_id: taskId,
         previous_status: current?.status || null,
-        new_status: "completed",
+        new_status: "merged",
         changed_by: userName,
-        note: "Completed from dashboard",
+        note: "Marked as merged from dashboard",
         user_id: userId,
         user_name: userName,
       });
