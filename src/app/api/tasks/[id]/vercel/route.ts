@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { Task } from '@/types/tasks';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // Fetch the task from Supabase
-  const { data: taskData, error: fetchError } = await supabaseAdmin
+  const { data: task, error: fetchError } = await supabaseAdmin
     .from('tasks')
     .select('*')
     .eq('id', id)
@@ -16,58 +14,59 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Task not found' }, { status: 404 });
   }
 
-  const task = taskData as Task;
-
-  // Check if branch_name is present
   if (!task.branch_name) {
-    return NextResponse.json({ error: 'Branch name not specified in the task' }, { status: 400 });
+    return NextResponse.json({ error: 'No branch name on task' }, { status: 400 });
   }
 
   const vercelToken = process.env.VERCEL_API_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID;
 
   if (!vercelToken || !projectId) {
-    return NextResponse.json({ error: 'Vercel API token or project ID not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'Vercel not configured' }, { status: 500 });
   }
 
-  // Call the Vercel API to find the latest deployment for that branch
+  // Filter by branch using meta-githubCommitRef
+  const branch = encodeURIComponent(task.branch_name);
   const res = await fetch(
-    `https://api.vercel.com/v6/deployments?projectId=${projectId}&target=preview&limit=1&state=READY`,
+    `https://api.vercel.com/v6/deployments?projectId=${projectId}&meta-githubCommitRef=${branch}&limit=1&sort=created&direction=desc`,
     { headers: { Authorization: `Bearer ${vercelToken}` } }
   );
 
   if (!res.ok) {
-    return NextResponse.json({ error: 'Failed to fetch deployments from Vercel' }, { status: res.status });
+    return NextResponse.json({ error: 'Vercel API error' }, { status: res.status });
   }
 
   const data = await res.json();
-
-  // Filter for the matching branch in data.deployments
-  const deployment = data.deployments.find((d: any) => d.meta.githubCommitRef === task.branch_name);
+  const deployment = (data.deployments || []).find(
+    (d: Record<string, unknown>) => {
+      const state = (d.readyState || d.state) as string;
+      return state === 'READY';
+    }
+  );
 
   if (!deployment) {
-    return NextResponse.json({ preview_url: null, message: 'No deployment found' }, { status: 200 });
+    return NextResponse.json({ error: 'No ready deployment found for branch' }, { status: 404 });
   }
 
-  // Update the task record with the new vercel_preview_url and vercel_deployment_id
-  const { data: updatedTaskData, error: updateError } = await supabaseAdmin
+  const previewUrl = `https://${deployment.url}`;
+
+  // Update task with new URL
+  const { data: updated, error: updateError } = await supabaseAdmin
     .from('tasks')
     .update({
-      vercel_preview_url: `https://${deployment.url}`,
-      vercel_deployment_id: deployment.uid,
+      vercel_preview_url: previewUrl,
+      vercel_deployment_id: deployment.uid || null,
     })
     .eq('id', id)
     .select('*')
     .single();
 
   if (updateError) {
-    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  const updatedTask = updatedTaskData as Task;
-
-  // Return the updated task
-  return NextResponse.json(updatedTask, { status: 200 });}
+  return NextResponse.json(updated);
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return POST(request, { params });

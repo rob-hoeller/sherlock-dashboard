@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TaskDetail, TaskStatus, TaskDocument, TaskHistory } from "@/types/tasks";
-import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock, RefreshCw } from "lucide-react";
+import { X, GithubIcon, ExternalLink, Download, Check, MessageSquare, Unlock, RefreshCw, XCircle } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import FeedbackDialog from "@/components/FeedbackDialog";
 
@@ -190,14 +190,16 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
   async function fetchVercelPreview() {
     if (!detail?.id || !detail.branch_name || fetchingPreview) return;
     setFetchingPreview(true);
+    // Null out old values first
+    setDetail((prev) => (prev ? { ...prev, vercel_preview_url: null, vercel_deployment_id: null } : prev));
     try {
-      const res = await fetch(`/api/tasks/${detail.id}/vercel`, { method: "GET" });
+      const res = await fetch(`/api/tasks/${detail.id}/vercel`, { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setDetail((prev) => (prev ? { ...prev, vercel_preview_url: data.url } : prev));
+      setDetail((prev) => (prev ? { ...prev, vercel_preview_url: data.vercel_preview_url, vercel_deployment_id: data.vercel_deployment_id } : prev));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch Vercel preview");
     } finally {
@@ -326,6 +328,22 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                       Request Changes
                     </button>
                   </div>
+                )}
+
+                {detail.status !== "cancelled" && detail.status !== "completed" && (
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Are you sure you want to cancel this task?")) {
+                        await handleAction("cancel");
+                        onClose();
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 mt-2"
+                  >
+                    <XCircle size={16} />
+                    Cancel Task
+                  </button>
                 )}
               </div>
 
