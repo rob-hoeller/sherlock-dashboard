@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { ScrollText, Calendar, Search, X, Download, Eye, Code } from "lucide-react";
+import { ScrollText, Calendar, Search, X, Download, Eye, Code, ArrowLeft } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface Digest {
@@ -139,7 +139,7 @@ export default function DigestsPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden max-h-[70vh] overflow-y-auto">
+        <div className={`bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden max-h-[70vh] overflow-y-auto ${selected ? "hidden lg:block" : ""}`}>
           {digests.length > 0 ? (
             digests.map((d) => {
               const date = getDate(d.file_name);
@@ -176,9 +176,20 @@ export default function DigestsPage() {
           )}
         </div>
 
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 max-h-[70vh] overflow-y-auto">
+        <div className={`lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-y-auto ${
+          selected
+            ? "fixed inset-0 z-40 p-4 pt-6 lg:static lg:rounded-xl lg:p-6 lg:max-h-[70vh] lg:z-auto"
+            : "hidden lg:block rounded-xl p-6 max-h-[70vh]"
+        }`}>
           {selected ? (
             <>
+              <button
+                onClick={() => setSelected(null)}
+                className="flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mb-3 lg:hidden"
+              >
+                <ArrowLeft size={16} />
+                Back to digests
+              </button>
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <ScrollText size={18} className="text-amber-500" />
                 <h2 className="font-medium">Digest — {selected}</h2>
@@ -215,7 +226,7 @@ export default function DigestsPage() {
               )}
             </>
           ) : (
-            <p className="text-zinc-500 dark:text-zinc-600 text-sm text-center py-16">Select a digest to view</p>
+            <p className="text-zinc-500 dark:text-zinc-600 text-sm text-center py-16 hidden lg:block">Select a digest to view</p>
           )}
         </div>
       </div>
