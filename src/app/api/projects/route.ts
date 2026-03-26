@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     .from('projects')
     .select(`
       *,
-      tasks:tasks(count)
+      tasks:tasks!project_id(count)
     `)
     .order('name', { ascending: true });
   

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     .from("tasks")
     .select(`
       *,
-      project:projects (
+      project:projects!project_id (
         id,
         name,
         color,
