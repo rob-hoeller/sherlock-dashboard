@@ -2,15 +2,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, FileText, ScrollText, Settings, ClipboardList, User, LogOut } from "lucide-react";
+import { BarChart3, FileText, ScrollText, Settings, ClipboardList, User, LogOut, FolderIcon } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 export const nav = [
   { href: "/", label: "Usage", icon: BarChart3 },
-  { href: "/core", label: "Core Files", icon: Settings },
+  // Removed Core Files link
   { href: "/digests", label: "Digests", icon: ScrollText },
   { href: "/models", label: "Model Calls", icon: FileText },
   { href: "/tasks", label: "Tasks", icon: ClipboardList }, // Added Tasks link
+  { href: "/projects", label: "Projects", icon: FolderIcon }, // Added Projects link
 ];
 
 export function Sidebar() {

@@ -1,7 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Project } from '@/lib/types';
 
 interface UsageRow {
   summary_date: string;
@@ -48,6 +61,8 @@ export default function Home() {
   const [isDark, setIsDark] = useState(false);
   const router = useRouter();
   const [taskCounts, setTaskCounts] = useState({ active: 0, needsReview: 0, blocked: 0, preview: 0 });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -81,10 +96,17 @@ export default function Home() {
         const needsReview = data.filter((t: { status: string }) => t.status === "needs_review").length;
         const blocked = data.filter((t: { status: string }) => t.status === "blocked").length;
         const preview = data.filter((t: { status: string }) => t.status === "preview").length;
-      setTaskCounts({ active, needsReview, blocked, preview });
+        setTaskCounts({ active, needsReview, blocked, preview });
       } catch { /* ignore */ }
     }
     fetchTaskCounts();
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/projects?active=true')
+      .then(res => res.json())
+      .then(setProjects)
+      .catch(console.error);
   }, []);
 
   const applyPreset = (p: string) => {
@@ -178,6 +200,12 @@ export default function Home() {
     }
   };
 
+  const handleProjectChange = (value: string) => {
+    const projectId = value === 'all' ? null : value;
+    setSelectedProjectId(projectId);
+    localStorage.setItem('dashboard-project-filter', projectId || '');
+  };
+
   return (
     <div className="space-y-8 pt-14 md:pt-0">
       <div>
@@ -237,6 +265,35 @@ export default function Home() {
             className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-900 dark:text-zinc-300"
           />
         </div>
+      </div>
+
+      {/* Project filter */}
+      <div className="flex items-center gap-4">
+        <Select
+          value={selectedProjectId || 'all'}
+          onValueChange={handleProjectChange}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(project => (
+                <SelectItem key={project.id} value={project.id}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <span>{project.name}</span>
+                  </div>
+                </SelectItem>
+              ))
+            }
+          </SelectContent>
+        </Select>
       </div>
 
       {loading && <Loading />}
@@ -322,7 +379,6 @@ export default function Home() {
           )}
         </>
       )}
-
 
     </div>
   );

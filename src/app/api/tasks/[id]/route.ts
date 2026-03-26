@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id } = await context.params;
 
   const { data: task, error } = await supabaseAdmin
     .from("tasks")
-    .select("*")
+    .select(`
+      *,
+      project:projects (
+        id,
+        name,
+        color,
+        github_repo_url,
+        settings
+      )
+    `)
     .eq("id", id)
     .single();
 
@@ -38,9 +47,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id } = await context.params;
   const body = await req.json();
 
   // If status is changing, record history
