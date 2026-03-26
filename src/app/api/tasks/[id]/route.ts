@@ -11,7 +11,7 @@ export async function GET(
     .from("tasks")
     .select(`
       *,
-      project:projects (
+      project:projects!project_id (
         id,
         name,
         color,
