@@ -267,35 +267,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Project filter */}
-      <div className="flex items-center gap-4">
-        <Select
-          value={selectedProjectId || 'all'}
-          onValueChange={handleProjectChange}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map(project => (
-                <SelectItem key={project.id} value={project.id}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span>{project.name}</span>
-                  </div>
-                </SelectItem>
-              ))
-            }
-          </SelectContent>
-        </Select>
-      </div>
-
       {loading && <Loading />}
       
       {!loading && (

@@ -19,19 +19,22 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project, onEdit, onDeactivate, onActivate }: ProjectCardProps) {
   return (
-    <div
-      className="border rounded-lg p-4 space-y-3"
-      style={{ borderLeftWidth: '3px', borderLeftColor: project.color }}
-    >
+    <div className="border rounded-lg p-4 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg truncate">{project.name}</h3>
-          {project.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-              {project.description}
-            </p>
-          )}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full flex-shrink-0"
+            style={{ backgroundColor: project.color }}
+          />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-lg truncate">{project.name}</h3>
+            {project.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                {project.description}
+              </p>
+            )}
+          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -86,6 +89,13 @@ export function ProjectCard({ project, onEdit, onDeactivate, onActivate }: Proje
           {project.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </div>
+
+      {/* View Tasks link */}
+      <Link href={`/tasks?project=${project.id}`}>
+        <Button variant="outline" size="sm" className="w-full">
+          View Tasks
+        </Button>
+      </Link>
     </div>
   );
 }
