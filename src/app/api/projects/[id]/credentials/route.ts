@@ -31,31 +31,46 @@ export async function POST(
     return NextResponse.json({ error: "Expected an array of credentials" }, { status: 400 });
   }
 
-  const rows = body
-    .filter((c: { key: string; value: string }) => c.key && c.value)
-    .map((c: { key: string; value: string }) => ({
-      project_id: id,
-      key: c.key,
-      // TODO: Integrate with Supabase Vault for proper secret storage
-      // Vault RPC functions are not exposed via PostgREST — requires DB migration or edge function
-      vault_secret_id: crypto.randomUUID(),
-      description: null,
-    }));
+  const results = [];
 
-  if (rows.length === 0) {
+  for (const cred of body) {
+    const { key, value } = cred as { key: string; value: string };
+    if (!key || !value) continue;
+
+    // Store secret in Supabase Vault
+    const { data: vaultId, error: vaultError } = await supabaseAdmin.rpc(
+      "create_project_secret",
+      { p_secret: value, p_name: `${id}/${key}`, p_description: `Project credential: ${key}` }
+    );
+
+    if (vaultError) {
+      return NextResponse.json({ error: `Vault error for '${key}': ${vaultError.message}` }, { status: 500 });
+    }
+
+    // Insert credential record linking to vault secret
+    const { data, error } = await supabaseAdmin
+      .from("project_credentials")
+      .insert({
+        project_id: id,
+        key,
+        vault_secret_id: vaultId,
+        description: null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    results.push(data);
+  }
+
+  if (results.length === 0) {
     return NextResponse.json({ error: "No valid credentials provided" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("project_credentials")
-    .insert(rows)
-    .select();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(results, { status: 201 });
 }
 
 export async function DELETE(
@@ -70,6 +85,22 @@ export async function DELETE(
     return NextResponse.json({ error: "Missing credentialId" }, { status: 400 });
   }
 
+  // Get vault_secret_id before deleting
+  const { data: cred, error: fetchError } = await supabaseAdmin
+    .from("project_credentials")
+    .select("vault_secret_id")
+    .eq("id", credentialId)
+    .eq("project_id", id)
+    .single();
+
+  if (fetchError) {
+    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  }
+
+  // Delete from vault
+  await supabaseAdmin.rpc("delete_project_secret", { p_secret_id: cred.vault_secret_id });
+
+  // Delete credential record
   const { error } = await supabaseAdmin
     .from("project_credentials")
     .delete()
