@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, Plus, ExternalLink } from "lucide-react";
 import { Project } from "@/types/projects";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const PRESET_COLORS = [
   { name: "Blue", hex: "#3B82F6" },
@@ -32,6 +33,8 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
+  const [existingCredentials, setExistingCredentials] = useState<{ id: string; key: string }[]>([]);
 
   useEffect(() => {
     if (project) {
@@ -40,16 +43,62 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       setGithubRepoUrl(project.github_repo_url || "");
       setColor(project.color || "");
       setIsActive(project.is_active);
+
+      // Fetch existing credentials
+      fetchCredentials();
     } else {
       setName("");
       setDescription("");
       setGithubRepoUrl("");
       setColor("");
       setIsActive(true);
+      setCredentials([]);
+      setExistingCredentials([]);
     }
   }, [project]);
 
-  if (!open) return null;
+  const fetchCredentials = async () => {
+    if (!project) return;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("project_credentials")
+        .select("id,key")
+        .eq("project_id", project.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw new Error(error.message);
+
+      setExistingCredentials(data as { id: string; key: string }[]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to fetch credentials");
+    }
+  };
+
+  const addCredential = () => {
+    setCredentials([...credentials, { key: "", value: "" }]);
+  };
+
+  const removeCredential = (index: number) => {
+    setCredentials(credentials.filter((_, i) => i !== index));
+  };
+
+  const removeExistingCredential = async (id: string) => {
+    try {
+      // Delete from project_credentials
+      const { error } = await supabaseAdmin
+        .from("project_credentials")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw new Error(error.message);
+
+      // Fetch updated credentials
+      fetchCredentials();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete credential");
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -86,12 +135,27 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
         throw new Error(data.error || "Failed to save project");
       }
 
+      // Save new credentials
+      for (const { key, value } of credentials) {
+        if (key && value) {
+          const { data: vaultData, error: vaultError } = await supabaseAdmin.rpc('vault.create_secret', { secret: value, name: key });
+          if (vaultError) throw new Error(vaultError.message);
+
+          const { error: insertError } = await supabaseAdmin
+            .from("project_credentials")
+            .insert({ project_id: project?.id, key, vault_secret_id: vaultData.secret_id });
+
+          if (insertError) throw new Error(insertError.message);
+        }
+      }
+
       setName("");
       setDescription("");
       setGithubRepoUrl("");
       setColor("");
       setIsActive(true);
       setError("");
+      setCredentials([]);
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -108,8 +172,11 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     setColor("");
     setIsActive(true);
     setError("");
+    setCredentials([]);
     onClose();
   };
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -196,6 +263,68 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Environment Variables */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Environment Variables
+            </label>
+            {existingCredentials.map((cred) => (
+              <div key={cred.id} className="flex items-center justify-between mb-2">
+                <span className="w-1/2 pr-2">{cred.key}</span>
+                <input
+                  type="password"
+                  value="********"
+                  readOnly
+                  className="w-1/2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeExistingCredential(cred.id)}
+                  className="ml-2 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            {credentials.map((cred, index) => (
+              <div key={index} className="flex items-center justify-between mb-2">
+                <input
+                  type="text"
+                  value={cred.key}
+                  onChange={(e) =>
+                    setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
+                  }
+                  placeholder="Key"
+                  className="w-1/2 pr-2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <input
+                  type="password"
+                  value={cred.value}
+                  onChange={(e) =>
+                    setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                  }
+                  placeholder="Value"
+                  className="w-1/2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCredential(index)}
+                  className="ml-2 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addCredential}
+              className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
+              <Plus size={16} className="mr-1" />
+              Add Variable
+            </button>
           </div>
 
           {/* Active Toggle (edit mode only) */}
