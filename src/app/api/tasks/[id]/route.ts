@@ -9,7 +9,7 @@ export async function GET(
 
   const { data: task, error } = await supabaseAdmin
     .from("tasks")
-    .select("*")
+    .select("*,project:projects!project_id(id,name,color)")
     .eq("id", id)
     .single();
 
