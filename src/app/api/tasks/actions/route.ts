@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "payload.project_id is required for plan action" }, { status: 400 });
       }
 
+      const isBugfix = (payload.task_type || "feature") === "bugfix";
+      const initialStatus = isBugfix ? "approved" : "planning";
+
       const { data: task, error: taskError } = await supabaseAdmin
         .from("tasks")
         .insert({
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
           description: payload.description || null,
           task_type: payload.task_type || "feature",
           github_repo: "rob-hoeller/sherlock-dashboard",
-          status: "planning",
+          status: initialStatus,
           project_id: payload.project_id,
         })
         .select()
@@ -62,6 +65,28 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         user_name: userName,
       });
+
+      if (isBugfix) {
+        // Record auto-approval in history
+        await supabaseAdmin.from("task_history").insert({
+          task_id: taskId,
+          previous_status: "planning",
+          new_status: "approved",
+          changed_by: "system",
+          note: "Bug fix tasks are auto-approved",
+          user_id: userId,
+          user_name: userName,
+        });
+
+        // Queue approved action for orchestrator
+        await supabaseAdmin.from("task_actions").insert({
+          task_id: taskId,
+          action_type: "approve",
+          user_id: userId,
+          user_name: "system",
+          payload: { auto_approved: true },
+        });
+      }
       break;
     }
 
