@@ -255,21 +255,28 @@ export async function POST(req: NextRequest) {
   }
 
   // 6. Queue the action for the agent to pick up
-  const { data: action, error: actionError } = await supabaseAdmin
-    .from("task_actions")
-    .insert({
-      task_id: taskId,
-      action_type,
-      user_id: userId,
-      user_name: userName,
-      payload: payload || {},
-    })
-    .select()
-    .single();
+  //    Skip for bugfix tasks created via 'plan' — they only get an 'approve' action (inserted above)
+  const skipActionInsert = action_type === "plan" && (payload?.task_type || "feature") === "bugfix";
 
-  if (actionError) {
-    return NextResponse.json({ error: actionError.message }, { status: 500 });
+  if (!skipActionInsert) {
+    const { data: action, error: actionError } = await supabaseAdmin
+      .from("task_actions")
+      .insert({
+        task_id: taskId,
+        action_type,
+        user_id: userId,
+        user_name: userName,
+        payload: payload || {},
+      })
+      .select()
+      .single();
+
+    if (actionError) {
+      return NextResponse.json({ error: actionError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ task_id: taskId, action_id: action.id }, { status: 201 });
   }
 
-  return NextResponse.json({ task_id: taskId, action_id: action.id }, { status: 201 });
+  return NextResponse.json({ task_id: taskId, action_id: null }, { status: 201 });
 }
