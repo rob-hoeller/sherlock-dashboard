@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check, Plus, ExternalLink } from "lucide-react";
+import { X, Check, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { Project } from "@/types/projects";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -34,6 +34,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
+  const [showValues, setShowValues] = useState<Record<number, boolean>>({});
   const [existingCredentials, setExistingCredentials] = useState<{ id: string; key: string }[]>([]);
 
   useEffect(() => {
@@ -180,7 +181,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 pb-4 border-b border-zinc-200 dark:border-zinc-700">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -271,25 +272,20 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
               Environment Variables
             </label>
             {existingCredentials.map((cred) => (
-              <div key={cred.id} className="flex items-center justify-between mb-2">
-                <span className="w-1/2 pr-2">{cred.key}</span>
-                <input
-                  type="password"
-                  value="********"
-                  readOnly
-                  className="w-1/2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                />
+              <div key={cred.id} className="flex items-center gap-2 mb-2">
+                <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 font-mono truncate">{cred.key}</span>
+                <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-400 dark:text-zinc-500 italic">••••••••</span>
                 <button
                   type="button"
                   onClick={() => removeExistingCredential(cred.id)}
-                  className="ml-2 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
                 >
                   <X size={16} />
                 </button>
               </div>
             ))}
             {credentials.map((cred, index) => (
-              <div key={index} className="flex items-center justify-between mb-2">
+              <div key={index} className="flex items-center gap-2 mb-2">
                 <input
                   type="text"
                   value={cred.key}
@@ -297,21 +293,30 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
                     setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
                   }
                   placeholder="Key"
-                  className="w-1/2 pr-2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 />
-                <input
-                  type="password"
-                  value={cred.value}
-                  onChange={(e) =>
-                    setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
-                  }
-                  placeholder="Value"
-                  className="w-1/2 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
+                <div className="flex-1 min-w-0 relative">
+                  <input
+                    type={showValues[index] ? "text" : "password"}
+                    value={cred.value}
+                    onChange={(e) =>
+                      setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                    }
+                    placeholder="Value"
+                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  >
+                    {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeCredential(index)}
-                  className="ml-2 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
                 >
                   <X size={16} />
                 </button>
