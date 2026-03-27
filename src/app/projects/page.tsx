@@ -10,6 +10,7 @@ export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
+  const [hideInactive, setHideInactive] = useState(true);
 
   const fetchProjects = useCallback(() => {
     fetch("/api/projects")
@@ -47,10 +48,12 @@ export default function ProjectsPage() {
       (project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
-  const sortedProjects = [
-    ...filteredProjects.filter((p) => p.is_active),
-    ...filteredProjects.filter((p) => !p.is_active),
-  ];
+  const sortedProjects = hideInactive
+    ? filteredProjects.filter((p) => p.is_active)
+    : [
+        ...filteredProjects.filter((p) => p.is_active),
+        ...filteredProjects.filter((p) => !p.is_active),
+      ];
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -76,6 +79,28 @@ export default function ProjectsPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
         />
+      </div>
+
+      {/* Hide Inactive Toggle */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={hideInactive}
+          onClick={() => setHideInactive(!hideInactive)}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+            hideInactive ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              hideInactive ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          Hide inactive projects
+        </span>
       </div>
 
       {/* Grid */}
