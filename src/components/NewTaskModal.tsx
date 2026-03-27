@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Paperclip, Plus } from "lucide-react";
 
 interface NewTaskModalProps {
@@ -15,6 +15,13 @@ interface AttachedFile {
   doc_type: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  color: string;
+  is_active: boolean;
+}
+
 export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -23,8 +30,41 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) {
+      fetch("/api/projects?active=true")
+        .then((res) => res.json())
+        .then((data: Project[]) => {
+          setProjects(data);
+          if (data.length === 1) {
+            setSelectedProject(data[0]);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch projects", err));
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        projectDropdownRef.current &&
+        !projectDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
@@ -70,6 +110,11 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
       return;
     }
 
+    if (!selectedProject) {
+      setError("Project is required");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -84,6 +129,7 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
             description: description.trim() || null,
             task_type: taskType,
             files: files.length > 0 ? files : undefined,
+            project_id: selectedProject.id,
           },
         }),
       });
@@ -99,6 +145,7 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
       setTaskType("feature");
       setFiles([]);
       setError("");
+      setSelectedProject(null);
       onCreated();
       onClose();
     } catch (err: unknown) {
@@ -114,8 +161,24 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
     setTaskType("feature");
     setFiles([]);
     setError("");
+    setSelectedProject(null);
     onClose();
   };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSelectProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsOpen(false);
+  };
+
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -145,6 +208,65 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
               placeholder="What needs to be done?"
               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
+          </div>
+
+          {/* Project */}
+          <div ref={projectDropdownRef} className="relative">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              Project <span className="text-red-500">*</span>
+            </label>
+            <div
+              onClick={() => setIsOpen(!isOpen)}
+              className={`w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 flex items-center justify-between cursor-pointer ${
+                isOpen ? "rounded-b-none" : ""
+              }`}
+            >
+              {selectedProject ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="block w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: selectedProject.color || "#3B82F6" }}
+                  />
+                  <span className="truncate">{selectedProject.name}</span>
+                </div>
+              ) : (
+                <span className="text-zinc-400">Select a project</span>
+              )}
+              <svg className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </div>
+            {isOpen && (
+              <div className="absolute left-0 right-0 z-10 border border-t-0 border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 shadow-lg">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Search projects..."
+                  className="w-full px-3 py-2 border-b border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className="max-h-[200px] overflow-y-auto">
+                  {filteredProjects.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-zinc-400">No projects found</div>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => handleSelectProject(project)}
+                        className={`px-3 py-2 flex items-center gap-2 cursor-pointer text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
+                          selectedProject?.id === project.id ? "bg-amber-50 dark:bg-amber-900/20" : ""
+                        }`}
+                      >
+                        <span
+                          className="block w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: project.color || "#3B82F6" }}
+                        />
+                        {project.name}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
