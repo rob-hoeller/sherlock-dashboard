@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Check, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { Project } from "@/types/projects";
-import { supabaseAdmin } from "@/lib/supabase";
+
 
 const PRESET_COLORS = [
   { name: "Blue", hex: "#3B82F6" },
@@ -62,14 +62,9 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     if (!project) return;
 
     try {
-      const { data, error } = await supabaseAdmin
-        .from("project_credentials")
-        .select("id,key")
-        .eq("project_id", project.id)
-        .order("created_at", { ascending: true });
-
-      if (error) throw new Error(error.message);
-
+      const res = await fetch(`/api/projects/${project.id}/credentials`);
+      if (!res.ok) throw new Error("Failed to fetch credentials");
+      const data = await res.json();
       setExistingCredentials(data as { id: string; key: string }[]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch credentials");
@@ -84,17 +79,11 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     setCredentials(credentials.filter((_, i) => i !== index));
   };
 
-  const removeExistingCredential = async (id: string) => {
+  const removeExistingCredential = async (credId: string) => {
+    if (!project) return;
     try {
-      // Delete from project_credentials
-      const { error } = await supabaseAdmin
-        .from("project_credentials")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw new Error(error.message);
-
-      // Fetch updated credentials
+      const res = await fetch(`/api/projects/${project.id}/credentials?credentialId=${credId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete credential");
       fetchCredentials();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete credential");
@@ -136,17 +125,17 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
         throw new Error(data.error || "Failed to save project");
       }
 
-      // Save new credentials
-      for (const { key, value } of credentials) {
-        if (key && value) {
-          const { data: vaultData, error: vaultError } = await supabaseAdmin.rpc('vault.create_secret', { secret: value, name: key });
-          if (vaultError) throw new Error(vaultError.message);
-
-          const { error: insertError } = await supabaseAdmin
-            .from("project_credentials")
-            .insert({ project_id: project?.id, key, vault_secret_id: vaultData.secret_id });
-
-          if (insertError) throw new Error(insertError.message);
+      // Save new credentials via API
+      const newCreds = credentials.filter((c) => c.key && c.value);
+      if (newCreds.length > 0 && project) {
+        const credRes = await fetch(`/api/projects/${project.id}/credentials`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCreds),
+        });
+        if (!credRes.ok) {
+          const credErr = await credRes.json();
+          throw new Error(credErr.error || "Failed to save credentials");
         }
       }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { randomUUID } from "crypto";
 
 export async function GET(
   _request: NextRequest,
@@ -39,7 +38,7 @@ export async function POST(
       key: c.key,
       // TODO: Integrate with Supabase Vault for proper secret storage
       // Vault RPC functions are not exposed via PostgREST — requires DB migration or edge function
-      vault_secret_id: randomUUID(),
+      vault_secret_id: crypto.randomUUID(),
       description: null,
     }));
 
