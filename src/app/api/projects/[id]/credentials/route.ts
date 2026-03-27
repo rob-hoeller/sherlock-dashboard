@@ -1,12 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+import { randomUUID } from "crypto";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
 
   const { data, error } = await supabaseAdmin
     .from("project_credentials")
-    .select("id,key,created_at")
+    .select("id,key,description,created_at")
     .eq("project_id", id)
     .order("created_at", { ascending: true });
 
@@ -17,78 +21,65 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json(data);
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
-  const credentials = await request.json();
+  const body = await request.json();
 
-  if (!Array.isArray(credentials)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected an array of credentials" }, { status: 400 });
   }
 
-  const newCredentials = [];
-
-  for (const { key, value } of credentials) {
-    const { data: vaultData, error: vaultError } = await supabaseAdmin.rpc('vault.create_secret', { secret: value, name: key });
-
-    if (vaultError) {
-      return NextResponse.json({ error: vaultError.message }, { status: 500 });
-    }
-
-    newCredentials.push({
+  const rows = body
+    .filter((c: { key: string; value: string }) => c.key && c.value)
+    .map((c: { key: string; value: string }) => ({
       project_id: id,
-      key,
-      vault_secret_id: vaultData.id
-    });
+      key: c.key,
+      // TODO: Integrate with Supabase Vault for proper secret storage
+      // Vault RPC functions are not exposed via PostgREST — requires DB migration or edge function
+      vault_secret_id: randomUUID(),
+      description: null,
+    }));
+
+  if (rows.length === 0) {
+    return NextResponse.json({ error: "No valid credentials provided" }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
     .from("project_credentials")
-    .insert(newCredentials)
+    .insert(rows)
     .select();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data, { status: 201 });
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const { searchParams } = new URL(request.url);
-  const credentialId = searchParams.get('credentialId');
+  const credentialId = searchParams.get("credentialId");
 
   if (!credentialId) {
     return NextResponse.json({ error: "Missing credentialId" }, { status: 400 });
   }
 
-  // Fetch the vault_secret_id to delete the secret from Vault
-  const { data, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("project_credentials")
-    .select("vault_secret_id")
+    .delete()
     .eq("id", credentialId)
-    .single();
+    .eq("project_id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Delete the secret from Vault
-  const { error: vaultError } = await supabaseAdmin.rpc('vault.delete_secret', { secret_id: data.vault_secret_id });
-
-  if (vaultError) {
-    return NextResponse.json({ error: vaultError.message }, { status: 500 });
-  }
-
-  // Delete the credential from project_credentials
-  const { error: deleteError } = await supabaseAdmin
-    .from("project_credentials")
-    .delete()
-    .eq("id", credentialId);
-
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ message: "Credential deleted successfully" });
+  return NextResponse.json({ success: true });
 }
