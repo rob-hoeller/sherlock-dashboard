@@ -168,9 +168,26 @@ export default function TasksPage() {
       .channel('tasks-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setTasks(prev => [payload.new as Task, ...prev]);
+          const newTask = payload.new as Task;
+          // Realtime payload doesn't include joined project data — fetch it
+          fetch(`/api/tasks`)
+            .then(res => res.json())
+            .then((data: Task[]) => {
+              const freshTask = data.find(t => t.id === newTask.id);
+              if (freshTask) {
+                setTasks(prev => [freshTask, ...prev.filter(t => t.id !== freshTask.id)]);
+              }
+            })
+            .catch(() => {
+              // Fallback: insert without project data, will show on next reload
+              setTasks(prev => [newTask, ...prev]);
+            });
         } else if (payload.eventType === 'UPDATE') {
-          setTasks(prev => prev.map(t => t.id === (payload.new as Task).id ? payload.new as Task : t));
+          const updated = payload.new as Task;
+          // Preserve the existing project data since realtime doesn't include joins
+          setTasks(prev => prev.map(t =>
+            t.id === updated.id ? { ...updated, project: t.project } : t
+          ));
         } else if (payload.eventType === 'DELETE') {
           setTasks(prev => prev.filter(t => t.id !== (payload.old as { id: string }).id));
         }
