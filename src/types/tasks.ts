@@ -31,6 +31,8 @@ export interface Task {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  project_id: string;
+  project?: { id: string; name: string; color: string | null } | null;
 }
 
 export interface TaskDocument {

@@ -63,14 +63,21 @@ function timeSince(date: Date): string {
 function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void }) {
   return (
     <div
-      className="mb-3 p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer dark:hover:shadow-lg transform hover:scale-101 transition-transform"
+      className="relative overflow-hidden mb-3 p-3 pl-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer dark:hover:shadow-lg transform hover:scale-101 transition-transform"
       onClick={() => onClick(task.id)}
     >
+      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: task.project?.color || "#3B82F6" }} />
       <div className="flex justify-between items-start gap-2">
         <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate flex-1" title={task.name}>
           {task.name}
         </h3>
       </div>
+
+      {task.project?.name && (
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500 truncate">
+          {task.project.name}
+        </p>
+      )}
 
       {task.branch_name && (
         <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">

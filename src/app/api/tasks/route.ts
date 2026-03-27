@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from("tasks")
-    .select("*")
+    .select("*,project:projects!project_id(id,name,color)")
     .order("created_at", { ascending: false });
 
   if (status) {
