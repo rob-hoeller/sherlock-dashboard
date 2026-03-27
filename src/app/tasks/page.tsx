@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
 import { Search, GithubIcon, ExternalLink, X, Clock, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
@@ -129,7 +129,15 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
   );
 }
 
-export default function TasksPage() {
+export default function TasksPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-zinc-400">Loading tasks...</div>}>
+      <TasksPage />
+    </Suspense>
+  );
+}
+
+function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
