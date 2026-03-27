@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "payload.name is required for plan action" }, { status: 400 });
       }
 
+      // Validate project_id
+      if (!payload?.project_id) {
+        return NextResponse.json({ error: "payload.project_id is required for plan action" }, { status: 400 });
+      }
+
       const { data: task, error: taskError } = await supabaseAdmin
         .from("tasks")
         .insert({
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest) {
           task_type: payload.task_type || "feature",
           github_repo: "rob-hoeller/sherlock-dashboard",
           status: "planning",
+          project_id: payload.project_id,
         })
         .select()
         .single();
