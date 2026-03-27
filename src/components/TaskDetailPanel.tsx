@@ -258,12 +258,23 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
+        {detail?.project?.color && (
+          <div
+            className="h-1 w-full"
+            style={{ backgroundColor: detail.project.color }}
+          />
+        )}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="min-w-0">
             <div className="text-sm text-gray-500 dark:text-gray-400">Task</div>
             <div className="font-semibold text-gray-900 dark:text-gray-100 truncate">
               {detail?.name || (loading ? "Loading..." : "")}
             </div>
+            {detail?.project?.name && (
+              <div className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                {detail.project.name}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
