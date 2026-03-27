@@ -7,14 +7,32 @@ export async function GET(
 ) {
   const { id } = await params;
 
+  const { searchParams } = new URL(_request.url);
+  const reveal = searchParams.get("reveal"); // credential ID to reveal value for
+
   const { data, error } = await supabaseAdmin
     .from("project_credentials")
-    .select("id,key,description,created_at")
+    .select("id,key,vault_secret_id,description,created_at")
     .eq("project_id", id)
     .order("created_at", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If a specific credential is requested to be revealed, decrypt its value
+  if (reveal && data) {
+    const cred = data.find((c: { id: string }) => c.id === reveal);
+    if (cred) {
+      const { data: secretValue } = await supabaseAdmin.rpc("read_project_secret", {
+        p_secret_id: (cred as { vault_secret_id: string }).vault_secret_id,
+      });
+      return NextResponse.json(
+        data.map((c: { id: string }) =>
+          c.id === reveal ? { ...c, value: secretValue } : c
+        )
+      );
+    }
   }
 
   return NextResponse.json(data);

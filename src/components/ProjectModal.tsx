@@ -35,6 +35,8 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
   const [error, setError] = useState("");
   const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
   const [showValues, setShowValues] = useState<Record<number, boolean>>({});
+  const [revealedSecrets, setRevealedSecrets] = useState<Record<string, string>>({});
+  const [revealingId, setRevealingId] = useState<string | null>(null);
   const [existingCredentials, setExistingCredentials] = useState<{ id: string; key: string }[]>([]);
 
   useEffect(() => {
@@ -77,6 +79,33 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
 
   const removeCredential = (index: number) => {
     setCredentials(credentials.filter((_, i) => i !== index));
+  };
+
+  const toggleRevealSecret = async (credId: string) => {
+    if (revealedSecrets[credId]) {
+      // Hide it
+      setRevealedSecrets((prev) => {
+        const next = { ...prev };
+        delete next[credId];
+        return next;
+      });
+      return;
+    }
+    if (!project) return;
+    setRevealingId(credId);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/credentials?reveal=${credId}`);
+      if (!res.ok) throw new Error("Failed to reveal secret");
+      const data = await res.json();
+      const cred = data.find((c: { id: string; value?: string }) => c.id === credId);
+      if (cred?.value) {
+        setRevealedSecrets((prev) => ({ ...prev, [credId]: cred.value }));
+      }
+    } catch {
+      setError("Failed to reveal secret");
+    } finally {
+      setRevealingId(null);
+    }
   };
 
   const removeExistingCredential = async (credId: string) => {
@@ -263,7 +292,22 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
             {existingCredentials.map((cred) => (
               <div key={cred.id} className="flex items-center gap-2 mb-2">
                 <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 font-mono truncate">{cred.key}</span>
-                <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-400 dark:text-zinc-500 italic">••••••••</span>
+                <div className="flex-1 min-w-0 relative">
+                  <input
+                    type={revealedSecrets[cred.id] ? "text" : "password"}
+                    value={revealedSecrets[cred.id] || "••••••••"}
+                    readOnly
+                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleRevealSecret(cred.id)}
+                    disabled={revealingId === cred.id}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-50"
+                  >
+                    {revealedSecrets[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeExistingCredential(cred.id)}
