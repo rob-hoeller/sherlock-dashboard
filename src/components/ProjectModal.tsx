@@ -1,8 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { Project } from "@/types/projects";
+
+const PRESET_COLORS = [
+  { name: "Blue", hex: "#3B82F6" },
+  { name: "Red", hex: "#EF4444" },
+  { name: "Green", hex: "#22C55E" },
+  { name: "Purple", hex: "#A855F7" },
+  { name: "Orange", hex: "#F97316" },
+  { name: "Teal", hex: "#14B8A6" },
+  { name: "Pink", hex: "#EC4899" },
+  { name: "Yellow", hex: "#EAB308" },
+  { name: "Indigo", hex: "#6366F1" },
+  { name: "Slate", hex: "#64748B" },
+];
 
 interface ProjectModalProps {
   open: boolean;
@@ -160,23 +173,28 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               Color
             </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                placeholder="#3B82F6"
-                className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-              {color && /^#[0-9A-Fa-f]{6}$/.test(color) && (
-                <div
-                  className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600 shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-              )}
+            <div className="flex flex-wrap gap-2">
+              {PRESET_COLORS.map((preset) => (
+                <button
+                  key={preset.hex}
+                  type="button"
+                  onClick={() => setColor(preset.hex)}
+                  title={preset.name}
+                  className={`w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center ${
+                    color === preset.hex
+                      ? "border-zinc-900 dark:border-white scale-110"
+                      : "border-transparent hover:border-zinc-400 dark:hover:border-zinc-500"
+                  }`}
+                  style={{ backgroundColor: preset.hex }}
+                >
+                  {color === preset.hex && (
+                    <Check size={14} className="text-white drop-shadow-md" />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
