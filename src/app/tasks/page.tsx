@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
 import { Search, GithubIcon, ExternalLink, X, Clock, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import RecentActivityPanel from "@/components/RecentActivityPanel";
 import NewTaskModal from "@/components/NewTaskModal";
 import { supabaseClient } from "@/lib/supabase";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
   planning: "border-gray-400 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
@@ -128,7 +129,15 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
   );
 }
 
-export default function TasksPage() {
+export default function TasksPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-zinc-400">Loading tasks...</div>}>
+      <TasksPage />
+    </Suspense>
+  );
+}
+
+function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -138,6 +147,16 @@ export default function TasksPage() {
   const [activityOpen, setActivityOpen] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const taskParam = searchParams.get("task");
+    if (taskParam) {
+      setSelectedTaskId(taskParam);
+    }
+  }, [searchParams]);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -239,6 +258,17 @@ export default function TasksPage() {
     setExpandedGroups(prev => ({ ...prev, [status]: !prev[status] }));
   };
 
+  const selectTask = (taskId: string | null) => {
+    setSelectedTaskId(taskId);
+    const url = new URL(window.location.href);
+    if (taskId) {
+      url.searchParams.set("task", taskId);
+    } else {
+      url.searchParams.delete("task");
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
@@ -325,7 +355,7 @@ export default function TasksPage() {
                         </div>
                       ) : (
                         columnTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
+                          <TaskCard key={task.id} task={task} onClick={selectTask} />
                         ))
                       )}
                     </div>
@@ -369,7 +399,7 @@ export default function TasksPage() {
                         <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-4">No tasks</div>
                       ) : (
                         columnTasks.map((task) => (
-                          <TaskCard key={task.id} task={task} onClick={setSelectedTaskId} />
+                          <TaskCard key={task.id} task={task} onClick={selectTask} />
                         ))
                       )}
                     </div>
@@ -382,7 +412,7 @@ export default function TasksPage() {
       )}
 
       {/* Task Detail Panel */}
-      <TaskDetailPanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
+      <TaskDetailPanel taskId={selectedTaskId} onClose={() => selectTask(null)} />
 
       {/* New Task Modal */}
       <NewTaskModal
@@ -397,7 +427,7 @@ export default function TasksPage() {
         onClose={() => setActivityOpen(false)}
         onSelectTask={(taskId) => {
           setActivityOpen(false);
-          setSelectedTaskId(taskId);
+          selectTask(taskId);
         }}
       />
     </div>
