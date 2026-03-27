@@ -9,3 +9,12 @@ export interface Project {
   created_at: string;
   updated_at: string;
 }
+
+export interface ProjectCredential {
+  id: string;
+  project_id: string;
+  key: string;
+  vault_secret_id: string;
+  created_at: string;
+  updated_at: string;
+}

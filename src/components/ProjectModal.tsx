@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, Plus, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { Project } from "@/types/projects";
+
 
 const PRESET_COLORS = [
   { name: "Blue", hex: "#3B82F6" },
@@ -32,6 +33,11 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
+  const [showValues, setShowValues] = useState<Record<number, boolean>>({});
+  const [revealedSecrets, setRevealedSecrets] = useState<Record<string, string>>({});
+  const [revealingId, setRevealingId] = useState<string | null>(null);
+  const [existingCredentials, setExistingCredentials] = useState<{ id: string; key: string }[]>([]);
 
   useEffect(() => {
     if (project) {
@@ -40,16 +46,78 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       setGithubRepoUrl(project.github_repo_url || "");
       setColor(project.color || "");
       setIsActive(project.is_active);
+
+      // Fetch existing credentials
+      fetchCredentials();
     } else {
       setName("");
       setDescription("");
       setGithubRepoUrl("");
       setColor("");
       setIsActive(true);
+      setCredentials([]);
+      setExistingCredentials([]);
     }
-  }, [project]);
+  }, [project, open]);
 
-  if (!open) return null;
+  const fetchCredentials = async () => {
+    if (!project) return;
+
+    try {
+      const res = await fetch(`/api/projects/${project.id}/credentials`);
+      if (!res.ok) throw new Error("Failed to fetch credentials");
+      const data = await res.json();
+      setExistingCredentials(data as { id: string; key: string }[]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to fetch credentials");
+    }
+  };
+
+  const addCredential = () => {
+    setCredentials([...credentials, { key: "", value: "" }]);
+  };
+
+  const removeCredential = (index: number) => {
+    setCredentials(credentials.filter((_, i) => i !== index));
+  };
+
+  const toggleRevealSecret = async (credId: string) => {
+    if (revealedSecrets[credId]) {
+      // Hide it
+      setRevealedSecrets((prev) => {
+        const next = { ...prev };
+        delete next[credId];
+        return next;
+      });
+      return;
+    }
+    if (!project) return;
+    setRevealingId(credId);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/credentials?reveal=${credId}`);
+      if (!res.ok) throw new Error("Failed to reveal secret");
+      const data = await res.json();
+      const cred = data.find((c: { id: string; value?: string }) => c.id === credId);
+      if (cred?.value) {
+        setRevealedSecrets((prev) => ({ ...prev, [credId]: cred.value }));
+      }
+    } catch {
+      setError("Failed to reveal secret");
+    } finally {
+      setRevealingId(null);
+    }
+  };
+
+  const removeExistingCredential = async (credId: string) => {
+    if (!project) return;
+    try {
+      const res = await fetch(`/api/projects/${project.id}/credentials?credentialId=${credId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete credential");
+      fetchCredentials();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete credential");
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -86,12 +154,27 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
         throw new Error(data.error || "Failed to save project");
       }
 
+      // Save new credentials via API
+      const newCreds = credentials.filter((c) => c.key && c.value);
+      if (newCreds.length > 0 && project) {
+        const credRes = await fetch(`/api/projects/${project.id}/credentials`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCreds),
+        });
+        if (!credRes.ok) {
+          const credErr = await credRes.json();
+          throw new Error(credErr.error || "Failed to save credentials");
+        }
+      }
+
       setName("");
       setDescription("");
       setGithubRepoUrl("");
       setColor("");
       setIsActive(true);
       setError("");
+      setCredentials([]);
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -108,12 +191,15 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     setColor("");
     setIsActive(true);
     setError("");
+    setCredentials([]);
     onClose();
   };
 
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 pb-4 border-b border-zinc-200 dark:border-zinc-700">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -196,6 +282,87 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Environment Variables */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Environment Variables
+            </label>
+            {existingCredentials.map((cred) => (
+              <div key={cred.id} className="flex items-center gap-2 mb-2">
+                <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 font-mono truncate">{cred.key}</span>
+                <div className="flex-1 min-w-0 relative">
+                  <input
+                    type={revealedSecrets[cred.id] ? "text" : "password"}
+                    value={revealedSecrets[cred.id] || "••••••••"}
+                    readOnly
+                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleRevealSecret(cred.id)}
+                    disabled={revealingId === cred.id}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-50"
+                  >
+                    {revealedSecrets[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeExistingCredential(cred.id)}
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            {credentials.map((cred, index) => (
+              <div key={index} className="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  value={cred.key}
+                  onChange={(e) =>
+                    setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
+                  }
+                  placeholder="Key"
+                  className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                />
+                <div className="flex-1 min-w-0 relative">
+                  <input
+                    type={showValues[index] ? "text" : "password"}
+                    value={cred.value}
+                    onChange={(e) =>
+                      setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                    }
+                    placeholder="Value"
+                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  >
+                    {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeCredential(index)}
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addCredential}
+              className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
+              <Plus size={16} className="mr-1" />
+              Add Variable
+            </button>
           </div>
 
           {/* Active Toggle (edit mode only) */}
