@@ -56,7 +56,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       setCredentials([]);
       setExistingCredentials([]);
     }
-  }, [project]);
+  }, [project, open]);
 
   const fetchCredentials = async () => {
     if (!project) return;
