@@ -178,6 +178,8 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
     project.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -209,7 +211,7 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
           </div>
 
           {/* Project */}
-          <div ref={projectDropdownRef}>
+          <div ref={projectDropdownRef} className="relative">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Project <span className="text-red-500">*</span>
             </label>
@@ -222,39 +224,46 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
               {selectedProject ? (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`block w-4 h-4 rounded-full bg-${selectedProject.color}`}
+                    className="block w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: selectedProject.color || "#3B82F6" }}
                   />
-                  {selectedProject.name}
+                  <span className="truncate">{selectedProject.name}</span>
                 </div>
               ) : (
-                "Select a project"
+                <span className="text-zinc-400">Select a project</span>
               )}
-              <Plus size={16} className={`${isOpen ? "-rotate-90" : ""}`} />
+              <svg className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </div>
             {isOpen && (
-              <div className="absolute w-full border border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 max-h-40 overflow-y-auto">
+              <div className="absolute left-0 right-0 z-10 border border-t-0 border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 shadow-lg">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   placeholder="Search projects..."
-                  className="w-full px-3 py-2 border-b border-zinc-300 dark:border-zinc-600 rounded-t-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border-b border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onClick={(e) => e.stopPropagation()}
                 />
-                <div className="max-h-32 overflow-y-auto">
-                  {filteredProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      onClick={() => handleSelectProject(project)}
-                      className={`px-3 py-2 flex items-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
-                        selectedProject?.id === project.id ? "bg-amber-50/20 dark:bg-amber-900/20" : ""
-                      }`}
-                    >
-                      <span
-                        className={`block w-4 h-4 rounded-full bg-${project.color}`}
-                      />
-                      {project.name}
-                    </div>
-                  ))}
+                <div className="max-h-[200px] overflow-y-auto">
+                  {filteredProjects.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-zinc-400">No projects found</div>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => handleSelectProject(project)}
+                        className={`px-3 py-2 flex items-center gap-2 cursor-pointer text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
+                          selectedProject?.id === project.id ? "bg-amber-50 dark:bg-amber-900/20" : ""
+                        }`}
+                      >
+                        <span
+                          className="block w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: project.color || "#3B82F6" }}
+                        />
+                        {project.name}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
