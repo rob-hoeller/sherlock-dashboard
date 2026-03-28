@@ -129,6 +129,20 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
   );
 }
 
+function Toggle({ label, enabled, onChange }: { label: string; enabled: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+    >
+      <span>{label}</span>
+      <div className={`relative w-8 h-[18px] rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
+      </div>
+    </button>
+  );
+}
+
 export default function TasksPageWrapper() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-zinc-400">Loading tasks...</div>}>
@@ -142,6 +156,7 @@ function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [completedDays, setCompletedDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -224,7 +239,7 @@ function TasksPage() {
       initial[status] = (grouped[status]?.length || 0) > 0;
     }
     setExpandedGroups(initial);
-  }, [tasks, showCancelled]);
+  }, [tasks, showCancelled, showCompleted]);
 
   // Client-side search filter
   const filtered = searchTerm
@@ -246,9 +261,12 @@ function TasksPage() {
     }
   }
 
+  const baseColumns = showCompleted
+    ? COLUMN_ORDER
+    : COLUMN_ORDER.filter((s) => s !== "completed");
   const columns: TaskStatus[] = showCancelled
-    ? [...COLUMN_ORDER, "cancelled"]
-    : COLUMN_ORDER;
+    ? [...baseColumns, "cancelled"]
+    : baseColumns;
 
   const handleShowMore = () => {
     setCompletedDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
@@ -304,12 +322,8 @@ function TasksPage() {
               <Plus size={16} />
               New Task
             </button>
-            <button
-              onClick={() => setShowCancelled(!showCancelled)}
-              className="px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              {showCancelled ? "Hide Cancelled" : "Show Cancelled"}
-            </button>
+            <Toggle label="Completed" enabled={showCompleted} onChange={setShowCompleted} />
+            <Toggle label="Cancelled" enabled={showCancelled} onChange={setShowCancelled} />
             <button
               onClick={() => setActivityOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
