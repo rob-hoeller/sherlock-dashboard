@@ -2,9 +2,8 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X, Clock, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
-import RecentActivityPanel from "@/components/RecentActivityPanel";
 import NewTaskModal from "@/components/NewTaskModal";
 import { supabaseClient } from "@/lib/supabase";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -168,7 +167,6 @@ function TasksPage() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [completedDays, setCompletedDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -308,7 +306,16 @@ function TasksPage() {
     <div className="flex flex-col h-full relative pt-14 md:pt-0">
       {/* Header */}
       <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="flex md:hidden items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={16} />
+            New Task
+          </button>
+        </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Search bar */}
           <div className="relative flex-1 md:max-w-xs">
@@ -330,20 +337,13 @@ function TasksPage() {
               <Toggle label="Show Cancelled" enabled={showCancelled} onChange={setShowCancelled} />
             </div>
             {/* Button row */}
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <button
                 onClick={() => setShowNewTask(true)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Plus size={16} />
                 New Task
-              </button>
-              <button
-                onClick={() => setActivityOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-              >
-                <Clock size={16} />
-                Recent Activity
               </button>
             </div>
           </div>
@@ -448,16 +448,6 @@ function TasksPage() {
         open={showNewTask}
         onClose={() => setShowNewTask(false)}
         onCreated={fetchTasks}
-      />
-
-      {/* Recent Activity Panel */}
-      <RecentActivityPanel
-        open={activityOpen}
-        onClose={() => setActivityOpen(false)}
-        onSelectTask={(taskId) => {
-          setActivityOpen(false);
-          selectTask(taskId);
-        }}
       />
     </div>
   );
