@@ -131,15 +131,24 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
 
 function Toggle({ label, enabled, onChange }: { label: string; enabled: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      onClick={() => onChange(!enabled)}
-      className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-    >
-      <span>{label}</span>
-      <div className={`relative w-8 h-[18px] rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
-        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
-      </div>
-    </button>
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        onClick={() => onChange(!enabled)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+          enabled ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            enabled ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+      <span className="text-sm text-zinc-600 dark:text-zinc-400">{label}</span>
+    </div>
   );
 }
 
@@ -313,24 +322,30 @@ function TasksPage() {
             />
           </div>
           
-          {/* Button group */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowNewTask(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus size={16} />
-              New Task
-            </button>
-            <Toggle label="Completed" enabled={showCompleted} onChange={setShowCompleted} />
-            <Toggle label="Cancelled" enabled={showCancelled} onChange={setShowCancelled} />
-            <button
-              onClick={() => setActivityOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            >
-              <Clock size={16} />
-              Recent Activity
-            </button>
+          {/* Toggles + buttons */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+            {/* Toggle row — own row on mobile, inline on desktop */}
+            <div className="flex items-center gap-4">
+              <Toggle label="Show Completed" enabled={showCompleted} onChange={setShowCompleted} />
+              <Toggle label="Show Cancelled" enabled={showCancelled} onChange={setShowCancelled} />
+            </div>
+            {/* Button row */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowNewTask(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Plus size={16} />
+                New Task
+              </button>
+              <button
+                onClick={() => setActivityOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
+              >
+                <Clock size={16} />
+                Recent Activity
+              </button>
+            </div>
           </div>
         </div>
       </div>
