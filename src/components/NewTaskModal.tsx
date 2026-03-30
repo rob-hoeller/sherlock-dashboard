@@ -196,20 +196,6 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
 
         {/* Body */}
         <div className="p-6 space-y-5">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="What needs to be done?"
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
           {/* Project */}
           <div ref={projectDropdownRef} className="relative">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
@@ -267,6 +253,20 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What needs to be done?"
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
           </div>
 
           {/* Description */}
