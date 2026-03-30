@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Plus, ChevronDown, ChevronRight, Filter } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import NewTaskModal from "@/components/NewTaskModal";
 import { supabaseClient } from "@/lib/supabase";
@@ -159,6 +159,13 @@ export default function TasksPageWrapper() {
   );
 }
 
+interface ProjectOption {
+  id: string;
+  name: string;
+  color: string;
+  is_active: boolean;
+}
+
 function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,6 +176,12 @@ function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [projectSearchTerm, setProjectSearchTerm] = useState("");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -178,7 +191,51 @@ function TasksPage() {
     if (taskParam) {
       setSelectedTaskId(taskParam);
     }
+    const projectParam = searchParams.get("project");
+    if (projectParam) {
+      setSelectedProjectId(projectParam);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/projects?active=true")
+      .then((res) => res.json())
+      .then((data: ProjectOption[]) => setProjects(data))
+      .catch(() => setProjects([]));
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        projectDropdownRef.current &&
+        !projectDropdownRef.current.contains(event.target as Node)
+      ) {
+        setProjectDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectProject = (projectId: string | null) => {
+    setSelectedProjectId(projectId);
+    setProjectDropdownOpen(false);
+    setMobileFilterOpen(false);
+    setProjectSearchTerm("");
+    const url = new URL(window.location.href);
+    if (projectId) {
+      url.searchParams.set("project", projectId);
+    } else {
+      url.searchParams.delete("project");
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const selectedProject = projects.find((p) => p.id === selectedProjectId) || null;
+
+  const filteredProjects = projects.filter((p) =>
+    p.name.toLowerCase().includes(projectSearchTerm.toLowerCase())
+  );
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -248,14 +305,18 @@ function TasksPage() {
     setExpandedGroups(initial);
   }, [tasks, showCancelled, showCompleted]);
 
-  // Client-side search filter
-  const filtered = searchTerm
-    ? tasks.filter(
-        (t) =>
-          t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (t.description || "").toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : tasks;
+  // Client-side search + project filter
+  const filtered = tasks.filter((t) => {
+    if (selectedProjectId && t.project_id !== selectedProjectId) return false;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      return (
+        t.name.toLowerCase().includes(term) ||
+        (t.description || "").toLowerCase().includes(term)
+      );
+    }
+    return true;
+  });
 
   // Group by status
   const grouped: Record<TaskStatus, Task[]> = {} as Record<TaskStatus, Task[]>;
@@ -317,16 +378,134 @@ function TasksPage() {
           </button>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-          {/* Search bar */}
-          <div className="relative flex-1 md:max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-            />
+          {/* Search bar + Project filter */}
+          <div className="flex items-center gap-2 flex-1 md:max-w-lg">
+            <div className="relative flex-1 md:max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              />
+            </div>
+
+            {/* Desktop project filter */}
+            <div ref={projectDropdownRef} className="relative hidden md:block">
+              <button
+                onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                  selectedProject
+                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200"
+                    : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                {selectedProject ? (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedProject.color || "#3B82F6" }} />
+                    <span className="truncate max-w-[120px]">{selectedProject.name}</span>
+                    <X
+                      size={14}
+                      className="shrink-0 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); selectProject(null); }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Filter size={14} />
+                    <span>Project</span>
+                  </>
+                )}
+              </button>
+              {projectDropdownOpen && (
+                <div className="absolute left-0 top-full mt-1 z-20 w-56 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-lg">
+                  <input
+                    type="text"
+                    value={projectSearchTerm}
+                    onChange={(e) => setProjectSearchTerm(e.target.value)}
+                    placeholder="Search projects..."
+                    className="w-full px-3 py-2 border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                  />
+                  <div className="max-h-[200px] overflow-y-auto">
+                    <div
+                      onClick={() => selectProject(null)}
+                      className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        !selectedProjectId ? "bg-amber-50 dark:bg-amber-900/20 font-medium" : ""
+                      }`}
+                    >
+                      All Projects
+                    </div>
+                    {filteredProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => selectProject(project.id)}
+                        className={`px-3 py-2 flex items-center gap-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          selectedProjectId === project.id ? "bg-amber-50 dark:bg-amber-900/20 font-medium" : ""
+                        }`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: project.color || "#3B82F6" }} />
+                        {project.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile filter button */}
+            <div className="relative md:hidden">
+              <button
+                onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md border transition-colors ${
+                  selectedProject
+                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200"
+                    : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                <Filter size={14} />
+                {selectedProject && (
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedProject.color || "#3B82F6" }} />
+                )}
+              </button>
+              {mobileFilterOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-56 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-lg">
+                  <input
+                    type="text"
+                    value={projectSearchTerm}
+                    onChange={(e) => setProjectSearchTerm(e.target.value)}
+                    placeholder="Search projects..."
+                    className="w-full px-3 py-2 border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                  />
+                  <div className="max-h-[200px] overflow-y-auto">
+                    <div
+                      onClick={() => selectProject(null)}
+                      className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        !selectedProjectId ? "bg-amber-50 dark:bg-amber-900/20 font-medium" : ""
+                      }`}
+                    >
+                      All Projects
+                    </div>
+                    {filteredProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => selectProject(project.id)}
+                        className={`px-3 py-2 flex items-center gap-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          selectedProjectId === project.id ? "bg-amber-50 dark:bg-amber-900/20 font-medium" : ""
+                        }`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: project.color || "#3B82F6" }} />
+                        {project.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Toggles + buttons */}
@@ -448,6 +627,7 @@ function TasksPage() {
         open={showNewTask}
         onClose={() => setShowNewTask(false)}
         onCreated={fetchTasks}
+        defaultProjectId={selectedProjectId}
       />
     </div>
   );
