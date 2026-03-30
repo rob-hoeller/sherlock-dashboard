@@ -7,6 +7,7 @@ interface NewTaskModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  defaultProjectId?: string | null;
 }
 
 interface AttachedFile {
@@ -22,7 +23,7 @@ interface Project {
   is_active: boolean;
 }
 
-export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalProps) {
+export default function NewTaskModal({ open, onClose, onCreated, defaultProjectId }: NewTaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [taskType, setTaskType] = useState<"feature" | "bugfix">("feature");
@@ -42,13 +43,20 @@ export default function NewTaskModal({ open, onClose, onCreated }: NewTaskModalP
         .then((res) => res.json())
         .then((data: Project[]) => {
           setProjects(data);
+          if (defaultProjectId) {
+            const match = data.find((p: Project) => p.id === defaultProjectId);
+            if (match) {
+              setSelectedProject(match);
+              return;
+            }
+          }
           if (data.length === 1) {
             setSelectedProject(data[0]);
           }
         })
         .catch((err) => console.error("Failed to fetch projects", err));
     }
-  }, [open]);
+  }, [open, defaultProjectId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
