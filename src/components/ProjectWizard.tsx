@@ -250,7 +250,11 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     const poll = async () => {
       try {
         const res = await fetch(`/api/projects/${projectId}/setup`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          // Server error — retry
+          setTimeout(poll, 5000);
+          return;
+        }
         const data = await res.json();
 
         if (data.status === "completed") {
