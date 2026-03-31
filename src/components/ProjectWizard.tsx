@@ -42,6 +42,7 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
   const [githubRepoUrl, setGithubRepoUrl] = useState("");
   const [color, setColor] = useState("#3B82F6");
   const [projectType, setProjectType] = useState<"existing" | "template">("existing");
+  const [adminEmail, setAdminEmail] = useState("");
 
   // Credentials
   const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
@@ -60,6 +61,8 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     pre_read_files: string[];
     project_instructions: string[];
     build_warning?: string;
+    admin_credentials?: { email: string; temp_password: string };
+    admin_warning?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -71,6 +74,7 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
       setGithubRepoUrl("");
       setColor("#3B82F6");
       setProjectType("existing");
+      setAdminEmail("");
       setCredentials([]);
       setShowValues({});
       setProjectId(null);
@@ -214,7 +218,10 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
       const res = await fetch(`/api/projects/${projectId}/setup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_type: projectType }),
+        body: JSON.stringify({
+          project_type: projectType,
+          admin_email: projectType === "template" ? adminEmail.trim() || null : null,
+        }),
       });
 
       if (!res.ok) {
@@ -392,6 +399,24 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
                   </button>
                 </div>
               </div>
+
+              {projectType === "template" && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    Admin Email
+                  </label>
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="Email for initial admin user"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                    An admin user will be created with this email and a temporary password.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
@@ -711,6 +736,34 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
                         <p className="text-xs text-amber-600 dark:text-amber-400">{detectedSettings.build_warning}</p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {detectedSettings?.admin_credentials && (
+                  <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
+                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                      Admin Credentials
+                    </h4>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                      Save these — the temporary password won&apos;t be shown again.
+                    </p>
+                    <div className="space-y-1.5 text-sm font-mono">
+                      <div>
+                        <span className="text-zinc-500">Email: </span>
+                        <span className="text-zinc-900 dark:text-zinc-100">{detectedSettings.admin_credentials.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500">Password: </span>
+                        <span className="text-zinc-900 dark:text-zinc-100">{detectedSettings.admin_credentials.temp_password}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {detectedSettings?.admin_warning && (
+                  <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-1">Admin User Warning</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">{detectedSettings.admin_warning}</p>
                   </div>
                 )}
 
