@@ -63,6 +63,8 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     build_warning?: string;
     admin_credentials?: { email: string; temp_password: string };
     admin_warning?: string;
+    pr_url?: string;
+    vercel_preview_url?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -164,7 +166,11 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     }
 
     if (step === "setup") {
-      setStep("review");
+      // Template: auto-advances to review on completion (see pollSetupStatus)
+      // This handles manual Next click if user somehow gets here
+      if (setupStatus === "success" && projectType === "template") {
+        setStep("review");
+      }
       return;
     }
 
@@ -250,8 +256,35 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
         if (data.status === "completed") {
           setSetupStatus("success");
           setSetupMessage("Sandbox setup complete!");
-          if (data.detected_settings) {
-            setDetectedSettings(data.detected_settings);
+          const settings = data.detected_settings
+            ? (typeof data.detected_settings === "string"
+              ? JSON.parse(data.detected_settings)
+              : data.detected_settings)
+            : null;
+          if (settings) {
+            setDetectedSettings(settings);
+          }
+
+          if (projectType === "existing") {
+            // Existing repos: save settings and close
+            if (projectId && settings) {
+              await fetch(`/api/projects/${projectId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  settings: {
+                    locked_files: settings.locked_files || [],
+                    pre_read_files: settings.pre_read_files || [],
+                    project_instructions: settings.project_instructions || [],
+                  },
+                }),
+              }).catch(() => {});
+            }
+            onCreated();
+            onClose();
+          } else {
+            // Template projects: advance to review
+            setStep("review");
           }
           return;
         }
@@ -739,6 +772,35 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
                   </div>
                 )}
 
+                {/* Links */}
+                {(detectedSettings?.pr_url || detectedSettings?.vercel_preview_url) && (
+                  <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+                    <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Links</h4>
+                    <div className="space-y-2">
+                      {detectedSettings.pr_url && (
+                        <a
+                          href={detectedSettings.pr_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <span>📋</span> Pull Request
+                        </a>
+                      )}
+                      {detectedSettings.vercel_preview_url && (
+                        <a
+                          href={detectedSettings.vercel_preview_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <span>🔍</span> Vercel Preview
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {detectedSettings?.admin_credentials && (
                   <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
                     <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
@@ -804,13 +866,15 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
             </button>
             <button
               onClick={handleNext}
-              disabled={loading || !canProceed()}
+              disabled={loading || !canProceed() || (step === "setup" && projectType === "template" && setupStatus !== "success")}
               className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 "Saving..."
               ) : step === "review" ? (
-                "Finish"
+                "Done"
+              ) : step === "setup" && projectType === "template" ? (
+                setupStatus === "success" ? "Review →" : "Setting up..."
               ) : (
                 <>
                   Next
