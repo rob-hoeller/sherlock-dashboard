@@ -54,10 +54,12 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
   const [setupStatus, setSetupStatus] = useState<"pending" | "running" | "success" | "error">("pending");
   const [setupMessage, setSetupMessage] = useState("");
 
-  // Review — detected settings
+  // Review — detected settings (editable)
   const [detectedSettings, setDetectedSettings] = useState<{
     locked_files: string[];
+    pre_read_files: string[];
     project_instructions: string[];
+    build_warning?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -163,7 +165,27 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     }
 
     if (step === "review") {
-      // Finalize — save any settings updates, then close
+      // Finalize — save detected settings to project, then close
+      if (projectId && detectedSettings) {
+        setLoading(true);
+        try {
+          await fetch(`/api/projects/${projectId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              settings: {
+                locked_files: detectedSettings.locked_files,
+                pre_read_files: detectedSettings.pre_read_files || [],
+                project_instructions: detectedSettings.project_instructions,
+              },
+            }),
+          });
+        } catch {
+          // Non-fatal — settings can be updated later
+        } finally {
+          setLoading(false);
+        }
+      }
       onCreated();
       onClose();
       return;
@@ -573,30 +595,120 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
                 </div>
 
                 {detectedSettings && (
-                  <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-                    <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                      Detected Settings
+                  <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-4">
+                    <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                      Coder Settings
                     </h4>
-                    {detectedSettings.locked_files.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs text-zinc-500 mb-1">Locked Files</p>
+
+                    {/* Locked Files — editable */}
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1.5">Locked Files (coder will not modify these)</p>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {detectedSettings.locked_files.map((f, i) => (
+                          <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 rounded text-xs font-mono text-amber-700 dark:text-amber-300">
+                            {f}
+                            <button
+                              type="button"
+                              onClick={() => setDetectedSettings({
+                                ...detectedSettings,
+                                locked_files: detectedSettings.locked_files.filter((_, idx) => idx !== i),
+                              })}
+                              className="ml-0.5 text-amber-500 hover:text-amber-700"
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add locked file path..."
+                          className="flex-1 px-2 py-1 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                              const val = (e.target as HTMLInputElement).value.trim();
+                              setDetectedSettings({
+                                ...detectedSettings,
+                                locked_files: [...detectedSettings.locked_files, val],
+                              });
+                              (e.target as HTMLInputElement).value = "";
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Pre-read Files */}
+                    {detectedSettings.pre_read_files && detectedSettings.pre_read_files.length > 0 && (
+                      <div>
+                        <p className="text-xs text-zinc-500 mb-1.5">Pre-read Files (coder reads these before generating)</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {detectedSettings.locked_files.map((f, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 rounded text-xs font-mono text-amber-700 dark:text-amber-300">
+                          {detectedSettings.pre_read_files.map((f, i) => (
+                            <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 rounded text-xs font-mono text-blue-700 dark:text-blue-300">
                               {f}
+                              <button
+                                type="button"
+                                onClick={() => setDetectedSettings({
+                                  ...detectedSettings,
+                                  pre_read_files: detectedSettings.pre_read_files.filter((_, idx) => idx !== i),
+                                })}
+                                className="ml-0.5 text-blue-500 hover:text-blue-700"
+                              >
+                                <X size={10} />
+                              </button>
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    {detectedSettings.project_instructions.length > 0 && (
-                      <div>
-                        <p className="text-xs text-zinc-500 mb-1">Project Instructions</p>
-                        <ul className="space-y-1">
+
+                    {/* Project Instructions — editable */}
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1.5">Project-Specific Instructions</p>
+                      {detectedSettings.project_instructions.length > 0 ? (
+                        <ul className="space-y-1.5 mb-2">
                           {detectedSettings.project_instructions.map((inst, i) => (
-                            <li key={i} className="text-xs text-zinc-600 dark:text-zinc-400">• {inst}</li>
+                            <li key={i} className="flex items-start gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+                              <span className="flex-1">• {inst}</span>
+                              <button
+                                type="button"
+                                onClick={() => setDetectedSettings({
+                                  ...detectedSettings,
+                                  project_instructions: detectedSettings.project_instructions.filter((_, idx) => idx !== i),
+                                })}
+                                className="mt-0.5 text-zinc-400 hover:text-red-500 shrink-0"
+                              >
+                                <X size={10} />
+                              </button>
+                            </li>
                           ))}
                         </ul>
+                      ) : (
+                        <p className="text-xs text-zinc-400 italic mb-2">None detected. Add project-specific rules below.</p>
+                      )}
+                      <input
+                        type="text"
+                        placeholder="Add a project-specific instruction..."
+                        className="w-full px-2 py-1 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                            const val = (e.target as HTMLInputElement).value.trim();
+                            setDetectedSettings({
+                              ...detectedSettings,
+                              project_instructions: [...detectedSettings.project_instructions, val],
+                            });
+                            (e.target as HTMLInputElement).value = "";
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Build Warning */}
+                    {detectedSettings.build_warning && (
+                      <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                        <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-1">Build Warning</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">{detectedSettings.build_warning}</p>
                       </div>
                     )}
                   </div>
