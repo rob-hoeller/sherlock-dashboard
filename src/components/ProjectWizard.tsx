@@ -44,7 +44,23 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
   const [projectType, setProjectType] = useState<"existing" | "template">("existing");
   const [adminEmail, setAdminEmail] = useState("");
 
-  // Credentials
+  // Credentials — required + optional
+  const REQUIRED_CREDS_TEMPLATE = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_SUPABASE_SERVICE_ROLE_KEY",
+    "VERCEL_PROJECT_ID",
+    "VERCEL_API_TOKEN",
+  ];
+  const REQUIRED_CREDS_EXISTING = [
+    "VERCEL_PROJECT_ID",
+    "VERCEL_API_TOKEN",
+  ];
+
+  const requiredCredKeys = projectType === "template" ? REQUIRED_CREDS_TEMPLATE : REQUIRED_CREDS_EXISTING;
+
+  const [requiredCreds, setRequiredCreds] = useState<Record<string, string>>({});
+  const [showRequiredValues, setShowRequiredValues] = useState<Record<string, boolean>>({});
   const [credentials, setCredentials] = useState<{ key: string; value: string }[]>([]);
   const [showValues, setShowValues] = useState<Record<number, boolean>>({});
 
@@ -77,6 +93,8 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
       setColor("#3B82F6");
       setProjectType("existing");
       setAdminEmail("");
+      setRequiredCreds({});
+      setShowRequiredValues({});
       setCredentials([]);
       setShowValues({});
       setProjectId(null);
@@ -94,7 +112,7 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
       case "basics":
         return !!name.trim() && !!githubRepoUrl.trim();
       case "credentials":
-        return true; // credentials are optional
+        return requiredCredKeys.every((key) => (requiredCreds[key] || "").trim().length > 0);
       case "setup":
         return setupStatus === "success";
       case "review":
@@ -139,8 +157,12 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
     }
 
     if (step === "credentials") {
-      // Save credentials if any
-      const newCreds = credentials.filter((c) => c.key.trim() && c.value.trim());
+      // Combine required + optional credentials
+      const requiredEntries = requiredCredKeys
+        .filter((key) => (requiredCreds[key] || "").trim())
+        .map((key) => ({ key, value: requiredCreds[key].trim() }));
+      const optionalEntries = credentials.filter((c) => c.key.trim() && c.value.trim());
+      const newCreds = [...requiredEntries, ...optionalEntries];
       if (newCreds.length > 0 && projectId) {
         setLoading(true);
         try {
@@ -486,60 +508,100 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
           {/* Step: Credentials */}
           {step === "credentials" && (
             <>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Add environment variables for this project. These are stored securely in the vault and used for Vercel deployments, API keys, and other secrets.
-              </p>
-              {credentials.map((cred, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={cred.key}
-                    onChange={(e) =>
-                      setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
-                    }
-                    placeholder="Key (e.g. VERCEL_PROJECT_ID)"
-                    className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
-                  />
-                  <div className="flex-1 min-w-0 relative">
+              {/* Required Variables */}
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Required Variables
+                </h3>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">
+                  These are needed for the setup process and task pipeline to function.
+                </p>
+                <div className="space-y-2">
+                  {requiredCredKeys.map((key) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-[260px] shrink-0 px-3 py-2 text-sm font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 truncate">
+                        {key}
+                      </span>
+                      <div className="flex-1 min-w-0 relative">
+                        <input
+                          type={showRequiredValues[key] ? "text" : "password"}
+                          value={requiredCreds[key] || ""}
+                          onChange={(e) =>
+                            setRequiredCreds({ ...requiredCreds, [key]: e.target.value })
+                          }
+                          placeholder="Value (required)"
+                          className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowRequiredValues({ ...showRequiredValues, [key]: !showRequiredValues[key] })
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                        >
+                          {showRequiredValues[key] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Optional Variables */}
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Additional Variables
+                </h3>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">
+                  Optional — add API keys or project-specific environment variables.
+                </p>
+                {credentials.map((cred, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
                     <input
-                      type={showValues[index] ? "text" : "password"}
-                      value={cred.value}
+                      type="text"
+                      value={cred.key}
                       onChange={(e) =>
-                        setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                        setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
                       }
-                      placeholder="Value"
-                      className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Key"
+                      className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
                     />
+                    <div className="flex-1 min-w-0 relative">
+                      <input
+                        type={showValues[index] ? "text" : "password"}
+                        value={cred.value}
+                        onChange={(e) =>
+                          setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                        }
+                        placeholder="Value"
+                        className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                      >
+                        {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                      onClick={() => removeCredential(index)}
+                      className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
                     >
-                      {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                      <X size={16} />
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeCredential(index)}
-                    className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addCredential}
-                className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-              >
-                <Plus size={16} className="mr-1" />
-                Add Variable
-              </button>
-              {credentials.length === 0 && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
-                  No credentials added yet. You can add them later from the project settings.
-                </p>
-              )}
+                ))}
+                <button
+                  type="button"
+                  onClick={addCredential}
+                  className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  <Plus size={16} className="mr-1" />
+                  Add Variable
+                </button>
+              </div>
             </>
           )}
 
@@ -641,19 +703,20 @@ export default function ProjectWizard({ open, onClose, onCreated }: ProjectWizar
 
                 <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                   <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                    Credentials ({credentials.filter((c) => c.key.trim()).length})
+                    Credentials ({requiredCredKeys.length + credentials.filter((c) => c.key.trim()).length})
                   </h4>
-                  {credentials.filter((c) => c.key.trim()).length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {credentials.filter((c) => c.key.trim()).map((c, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300">
-                          {c.key}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-zinc-400 italic">None configured</p>
-                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {requiredCredKeys.map((key) => (
+                      <span key={key} className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300">
+                        {key}
+                      </span>
+                    ))}
+                    {credentials.filter((c) => c.key.trim()).map((c, i) => (
+                      <span key={`opt-${i}`} className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300">
+                        {c.key}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {detectedSettings && (
