@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Pencil, Plus, GithubIcon } from "lucide-react";
 import { Project } from "@/types/projects";
 import ProjectModal from "@/components/ProjectModal";
+import ProjectWizard from "@/components/ProjectWizard";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [hideInactive, setHideInactive] = useState(true);
 
@@ -23,9 +25,8 @@ export default function ProjectsPage() {
     fetchProjects();
   }, [fetchProjects]);
 
-  const openCreateModal = () => {
-    setEditingProject(undefined);
-    setIsModalOpen(true);
+  const openCreateWizard = () => {
+    setIsWizardOpen(true);
   };
 
   const openEditModal = (project: Project) => {
@@ -61,7 +62,7 @@ export default function ProjectsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Projects</h1>
         <button
-          onClick={openCreateModal}
+          onClick={openCreateWizard}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
         >
           <Plus size={16} />
@@ -173,12 +174,19 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Edit Modal (existing projects) */}
       <ProjectModal
         open={isModalOpen}
         onClose={closeModal}
         onSaved={handleSaved}
         project={editingProject}
+      />
+
+      {/* Create Wizard (new projects) */}
+      <ProjectWizard
+        open={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCreated={handleSaved}
       />
     </div>
   );
