@@ -49,6 +49,7 @@ export async function POST(
     .insert({
       project_id: id,
       project_type: body.project_type || "existing",
+      admin_email: body.admin_email || null,
       status: "pending",
     })
     .select()
