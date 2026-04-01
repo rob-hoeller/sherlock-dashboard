@@ -170,11 +170,11 @@ export default function Home() {
     }
   };
 
-  const pieTooltipFormatter = (v: number) => {
+  const pieTooltipFormatter = (v: number, name: string) => {
     switch (selectedMetric) {
-      case 'cost': return [`$${v.toFixed(4)}`, selectedMetric];
-      case 'calls': return [v.toLocaleString(), selectedMetric];
-      default: return [fmt(v), selectedMetric];
+      case 'cost': return [`$${v.toFixed(4)}`, name];
+      case 'calls': return [v.toLocaleString(), name];
+      default: return [fmt(v), name];
     }
   };
 
