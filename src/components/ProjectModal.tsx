@@ -38,6 +38,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
   const [revealedSecrets, setRevealedSecrets] = useState<Record<string, string>>({});
   const [revealingId, setRevealingId] = useState<string | null>(null);
   const [existingCredentials, setExistingCredentials] = useState<{ id: string; key: string }[]>([]);
+  const [activeTab, setActiveTab] = useState<"general" | "env">("general");
 
   useEffect(() => {
     if (project) {
@@ -46,6 +47,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       setGithubRepoUrl(project.github_repo_url || "");
       setColor(project.color || "");
       setIsActive(project.is_active);
+      setActiveTab("general");
 
       // Fetch existing credentials
       fetchCredentials();
@@ -57,6 +59,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       setIsActive(true);
       setCredentials([]);
       setExistingCredentials([]);
+      setActiveTab("general");
     }
   }, [project, open]);
 
@@ -213,183 +216,215 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
           </button>
         </div>
 
-        {/* Body */}
+        {/* Tab Bar */}
+        <div className="flex border-b border-zinc-200 dark:border-zinc-700 px-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab("general")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "general"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            General
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("env")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "env"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            Environment Variables
+          </button>
+        </div>
+
+        {/* Tab Content */}
         <div className="p-6 space-y-5">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Project name"
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Project description..."
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-            />
-          </div>
-
-          {/* GitHub Repo URL */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              GitHub Repo URL
-            </label>
-            <input
-              type="text"
-              value={githubRepoUrl}
-              onChange={(e) => setGithubRepoUrl(e.target.value)}
-              placeholder="https://github.com/owner/repo"
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          {/* Color */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Color
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_COLORS.map((preset) => (
-                <button
-                  key={preset.hex}
-                  type="button"
-                  onClick={() => setColor(preset.hex)}
-                  title={preset.name}
-                  className={`w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center ${
-                    color === preset.hex
-                      ? "border-zinc-900 dark:border-white scale-110"
-                      : "border-transparent hover:border-zinc-400 dark:hover:border-zinc-500"
-                  }`}
-                  style={{ backgroundColor: preset.hex }}
-                >
-                  {color === preset.hex && (
-                    <Check size={14} className="text-white drop-shadow-md" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Environment Variables */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Environment Variables
-            </label>
-            {existingCredentials.map((cred) => (
-              <div key={cred.id} className="flex items-center gap-2 mb-2">
-                <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 font-mono truncate">{cred.key}</span>
-                <div className="flex-1 min-w-0 relative">
-                  <input
-                    type={revealedSecrets[cred.id] ? "text" : "password"}
-                    value={revealedSecrets[cred.id] || "••••••••"}
-                    readOnly
-                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => toggleRevealSecret(cred.id)}
-                    disabled={revealingId === cred.id}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-50"
-                  >
-                    {revealedSecrets[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeExistingCredential(cred.id)}
-                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-            {credentials.map((cred, index) => (
-              <div key={index} className="flex items-center gap-2 mb-2">
+          {activeTab === "general" ? (
+            <>
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={cred.key}
-                  onChange={(e) =>
-                    setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
-                  }
-                  placeholder="Key"
-                  className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Project name"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
-                <div className="flex-1 min-w-0 relative">
-                  <input
-                    type={showValues[index] ? "text" : "password"}
-                    value={cred.value}
-                    onChange={(e) =>
-                      setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
-                    }
-                    placeholder="Value"
-                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                  />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Project description..."
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                />
+              </div>
+
+              {/* GitHub Repo URL */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  GitHub Repo URL
+                </label>
+                <input
+                  type="text"
+                  value={githubRepoUrl}
+                  onChange={(e) => setGithubRepoUrl(e.target.value)}
+                  placeholder="https://github.com/owner/repo"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Color */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Color
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COLORS.map((preset) => (
+                    <button
+                      key={preset.hex}
+                      type="button"
+                      onClick={() => setColor(preset.hex)}
+                      title={preset.name}
+                      className={`w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        color === preset.hex
+                          ? "border-zinc-900 dark:border-white scale-110"
+                          : "border-transparent hover:border-zinc-400 dark:hover:border-zinc-500"
+                      }`}
+                      style={{ backgroundColor: preset.hex }}
+                    >
+                      {color === preset.hex && (
+                        <Check size={14} className="text-white drop-shadow-md" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Toggle (edit mode only) */}
+              {project && (
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    role="switch"
+                    aria-checked={isActive}
+                    onClick={() => setIsActive(!isActive)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+                      isActive ? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-600"
+                    }`}
                   >
-                    {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        isActive ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
                   </button>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
                 </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Environment Variables */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Environment Variables
+                </label>
+                {existingCredentials.map((cred) => (
+                  <div key={cred.id} className="flex items-center gap-2 mb-2">
+                    <span className="flex-1 min-w-0 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 font-mono truncate">{cred.key}</span>
+                    <div className="flex-1 min-w-0 relative">
+                      <input
+                        type={revealedSecrets[cred.id] ? "text" : "password"}
+                        value={revealedSecrets[cred.id] || "••••••••"}
+                        readOnly
+                        className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleRevealSecret(cred.id)}
+                        disabled={revealingId === cred.id}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-50"
+                      >
+                        {revealedSecrets[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeExistingCredential(cred.id)}
+                      className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                {credentials.map((cred, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={cred.key}
+                      onChange={(e) =>
+                        setCredentials(credentials.map((c, i) => (i === index ? { ...c, key: e.target.value } : c)))
+                      }
+                      placeholder="Key"
+                      className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                    />
+                    <div className="flex-1 min-w-0 relative">
+                      <input
+                        type={showValues[index] ? "text" : "password"}
+                        value={cred.value}
+                        onChange={(e) =>
+                          setCredentials(credentials.map((c, i) => (i === index ? { ...c, value: e.target.value } : c)))
+                        }
+                        placeholder="Value"
+                        className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowValues({ ...showValues, [index]: !showValues[index] })}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                      >
+                        {showValues[index] ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCredential(index)}
+                      className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
                 <button
                   type="button"
-                  onClick={() => removeCredential(index)}
-                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
+                  onClick={addCredential}
+                  className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <X size={16} />
+                  <Plus size={16} className="mr-1" />
+                  Add Variable
                 </button>
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={addCredential}
-              className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <Plus size={16} className="mr-1" />
-              Add Variable
-            </button>
-          </div>
-
-          {/* Active Toggle (edit mode only) */}
-          {project && (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isActive}
-                onClick={() => setIsActive(!isActive)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                  isActive ? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-600"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    isActive ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
+            </>
           )}
 
-          {/* Error */}
+          {/* Error stays outside the conditional — visible on both tabs */}
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
