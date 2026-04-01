@@ -292,7 +292,7 @@ export default function Home() {
                   <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{pieChartTitle}</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                      <Pie data={modelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
                         {modelData.map((entry) => (
                           <Cell key={entry.name} fill={modelColors[entry.name] || "#71717a"} />
                         ))}
@@ -311,6 +311,19 @@ export default function Home() {
                           color: isDark ? "#fafafa" : "#18181b",
                         }}
                         formatter={pieTooltipFormatter}
+                      />
+                      <Legend
+                        iconType="circle"
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="left"
+                        wrapperStyle={{ fontSize: '12px', color: '#71717a', paddingTop: "16px" }}
+                        formatter={(value: string) => {
+                          const total = modelData.reduce((sum, d) => sum + d.value, 0);
+                          const entry = modelData.find((d) => d.name === value);
+                          const pct = entry && total > 0 ? ((entry.value / total) * 100).toFixed(0) : "0";
+                          return `${value} (${pct}%)`;
+                        }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
