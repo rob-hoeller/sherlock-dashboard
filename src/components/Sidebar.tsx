@@ -7,10 +7,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 export const nav = [
   { href: "/", label: "Mission Control", icon: Rocket },
-  { href: "/digests", label: "Digests", icon: ScrollText },
-  { href: "/models", label: "Model Calls", icon: FileText },
   { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/tasks", label: "Tasks", icon: ClipboardList }, // Added Tasks link
+  { href: "/tasks", label: "Missions", icon: ClipboardList },
+  { href: "/models", label: "Model Calls", icon: FileText },
+  { href: "/digests", label: "Digests", icon: ScrollText },
 ];
 
 export function Sidebar() {
