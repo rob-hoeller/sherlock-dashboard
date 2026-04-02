@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { Task, TaskStatus, TaskDetail } from "@/types/tasks";
-import { Search, GithubIcon, ExternalLink, X, Plus, ChevronDown, ChevronRight, Filter } from "lucide-react";
+import { Search, GithubIcon, ExternalLink, X, Plus, ChevronDown, ChevronRight, Filter, RefreshCw } from "lucide-react";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import NewTaskModal from "@/components/NewTaskModal";
 import { supabaseClient } from "@/lib/supabase";
@@ -390,6 +390,15 @@ function TasksPage() {
                 className="pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               />
             </div>
+
+            {/* Reload button */}
+            <button
+              onClick={fetchTasks}
+              title="Reload tasks"
+              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
 
             {/* Desktop project filter */}
             <div ref={projectDropdownRef} className="relative hidden md:block">
