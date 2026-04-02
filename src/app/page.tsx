@@ -1,3 +1,8 @@
+/**
+ * Mission Control — Main dashboard page
+ * Displays usage metrics, cost tracking, and model analytics.
+ * @route /
+ */
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -180,8 +185,8 @@ export default function Home() {
 
   return (
     <div className="space-y-8 pt-14 md:pt-0">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">🚀 Mission Control</h1>
-      <div>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">🚀 Mission Control</h1>
         <div
           className="flex items-center gap-6 bg-white dark:bg-zinc-900 rounded-xl px-5 py-3 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer transition-colors w-fit"
           onClick={() => router.push("/tasks")}
