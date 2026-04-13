@@ -105,7 +105,7 @@ export default function UsagePage() {
                 <td className="px-4 py-2.5 text-right text-zinc-900 dark:text-zinc-100">{e.api_calls}</td>
                 <td className="px-4 py-2.5 text-right font-mono text-zinc-600 dark:text-zinc-400">{e.input_tokens.toLocaleString()}</td>
                 <td className="px-4 py-2.5 text-right font-mono text-zinc-600 dark:text-zinc-400">{e.output_tokens.toLocaleString()}</td>
-                <td className="px-4 py-2.5 text-right font-mono text-amber-400 dark:text-amber-500">${e.total_cost.toFixed(4)}</td>
+                <td className="px-4 py-2.5 text-right font-mono text-amber-400 dark:text-amber-500">${e.total_cost.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
