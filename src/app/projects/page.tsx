@@ -57,9 +57,9 @@ export default function ProjectsPage() {
       ];
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Projects</h1>
         <button
           onClick={openCreateWizard}
@@ -71,7 +71,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-6">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
         <input
           type="text"
@@ -83,7 +83,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Hide Inactive Toggle */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           role="switch"
@@ -104,74 +104,131 @@ export default function ProjectsPage() {
         </span>
       </div>
 
-      {/* Grid */}
+      {/* Desktop table + Mobile cards */}
       {sortedProjects.length === 0 ? (
         <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
           {searchTerm ? "No projects match your search." : "No projects yet. Create one to get started."}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sortedProjects.map((project) => (
-            <div
-              key={project.id}
-              className={`relative overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition-shadow ${
-                !project.is_active ? "opacity-60" : ""
-              }`}
-            >
-              {/* Color accent bar */}
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-zinc-500 dark:text-zinc-400">
+                  <th className="pb-3 font-medium">Project</th>
+                  <th className="pb-3 font-medium">Description</th>
+                  <th className="pb-3 font-medium">Repository</th>
+                  <th className="pb-3 font-medium">Status</th>
+                  <th className="pb-3 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedProjects.map((project) => (
+                  <tr key={project.id} className={`border-b border-zinc-100 dark:border-zinc-800 ${!project.is_active ? "opacity-60" : ""}`}>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: project.color || "#3B82F6" }} />
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">{project.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 text-zinc-500 dark:text-zinc-400 max-w-xs truncate">{project.description || "—"}</td>
+                    <td className="py-3">
+                      {project.github_repo_url ? (
+                        <a href={project.github_repo_url} target="_blank" rel="noopener noreferrer"
+                           className="flex items-center gap-1.5 text-blue-500 dark:text-blue-400 hover:underline">
+                          <GithubIcon size={14} />
+                          <span>Repository</span>
+                        </a>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        project.is_active
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+                      }`}>
+                        {project.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <button onClick={() => openEditModal(project)}
+                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                        <Pencil size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+            {sortedProjects.map((project) => (
               <div
-                className="absolute left-0 top-0 bottom-0 w-1"
-                style={{ backgroundColor: project.color || "#3B82F6" }}
-              />
+                key={project.id}
+                className={`relative overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition-shadow ${
+                  !project.is_active ? "opacity-60" : ""
+                }`}
+              >
+                {/* Color accent bar */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1"
+                  style={{ backgroundColor: project.color || "#3B82F6" }}
+                />
 
-              <div className="p-4 pl-5">
-                {/* Top row: name + edit */}
-                <div className="flex justify-between items-start gap-2 mb-2">
-                  <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate flex-1">
-                    {project.name}
-                  </h3>
-                  <button
-                    onClick={() => openEditModal(project)}
-                    className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                </div>
-
-                {/* Description */}
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 mb-3">
-                  {project.description || "No description"}
-                </p>
-
-                {/* Bottom row: GitHub link + status badge */}
-                <div className="flex items-center justify-between">
-                  {project.github_repo_url ? (
-                    <a
-                      href={project.github_repo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400 hover:underline"
+                <div className="p-4 pl-5">
+                  {/* Top row: name + edit */}
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate flex-1">
+                      {project.name}
+                    </h3>
+                    <button
+                      onClick={() => openEditModal(project)}
+                      className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 shrink-0"
                     >
-                      <GithubIcon size={14} />
-                      <span>Repository</span>
-                    </a>
-                  ) : (
-                    <span />
-                  )}
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      project.is_active
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
-                    }`}
-                  >
-                    {project.is_active ? "Active" : "Inactive"}
-                  </span>
+                      <Pencil size={14} />
+                    </button>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 mb-3">
+                    {project.description || "No description"}
+                  </p>
+
+                  {/* Bottom row: GitHub link + status badge */}
+                  <div className="flex items-center justify-between">
+                    {project.github_repo_url ? (
+                      <a
+                        href={project.github_repo_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400 hover:underline"
+                      >
+                        <GithubIcon size={14} />
+                        <span>Repository</span>
+                      </a>
+                    ) : (
+                      <span />
+                    )}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        project.is_active
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+                      }`}
+                    >
+                      {project.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Edit Modal (existing projects) */}
