@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket } from "lucide-react";
+import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 export const nav = [
@@ -11,6 +11,7 @@ export const nav = [
   { href: "/tasks", label: "Tasks", icon: ClipboardList },
   { href: "/models", label: "Model Calls", icon: FileText },
   { href: "/digests", label: "Digests", icon: ScrollText },
+  { href: "/settings/variables", label: "Variables", icon: Key },
 ];
 
 export function Sidebar() {
