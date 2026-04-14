@@ -101,7 +101,7 @@ export default function VariablesPage() {
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={16} />
           Add Variable
