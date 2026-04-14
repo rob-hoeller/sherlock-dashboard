@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   const status = params.get("status");
   const search = params.get("search");
   const completedDays = parseInt(params.get("completedDays") || "30", 10);
+  const cancelledDays = parseInt(params.get("cancelledDays") || "30", 10);
 
   let query = supabaseAdmin
     .from("tasks")
@@ -18,6 +19,11 @@ export async function GET(req: NextRequest) {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - completedDays);
       query = query.gte("completed_at", cutoff.toISOString());
+    }
+    if (status === "cancelled") {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - cancelledDays);
+      query = query.gte("updated_at", cutoff.toISOString());
     }
   }
 
