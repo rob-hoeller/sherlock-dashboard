@@ -6,7 +6,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList } from "recharts";
 
 interface UsageRow {
   summary_date: string;
@@ -127,6 +127,33 @@ export default function Home() {
     date: date.slice(5),
     ...costs,
   })).sort((a, b) => a.date.localeCompare(b.date));
+
+  // Daily totals for bar labels
+  const dailyTotals: Record<string, number> = {};
+  for (const entry of dailyDataWithModels) {
+    const total = Object.entries(entry).reduce(
+      (sum, [key, val]) => (key === "date" ? sum : sum + (Number(val) || 0)),
+      0
+    );
+    dailyTotals[entry.date as string] = total;
+  }
+  const abbreviate = dailyDataWithModels.length > 14;
+
+  const formatBarLabel = (value: number): string => {
+    if (value === 0) return "";
+    if (selectedMetric === "cost") {
+      if (abbreviate) {
+        if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+        if (value >= 10) return `$${value.toFixed(0)}`;
+        return `$${value.toFixed(1)}`;
+      }
+      return `$${value.toFixed(2)}`;
+    }
+    if (selectedMetric === "calls") {
+      return abbreviate ? fmt(value) : value.toLocaleString();
+    }
+    return fmt(value);
+  };
 
   const byModel: Record<string, number> = {};
   for (const e of data) {
@@ -262,7 +289,7 @@ export default function Home() {
                 <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
                   <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">{barChartTitle}</h2>
                   <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={dailyDataWithModels} margin={{ bottom: 40 }}>
+                    <BarChart data={dailyDataWithModels} margin={{ top: 20, bottom: 40 }}>
                       <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 11 }} />
                       <YAxis tick={{ fill: "#71717a", fontSize: 11 }} tickFormatter={barChartYAxisFormatter} />
                       <Tooltip
@@ -280,9 +307,29 @@ export default function Home() {
                         }}
                         formatter={tooltipFormatter}
                       />
-                      {sortedModels.map((model) => (
-                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]} />
-                      ))}
+                      {sortedModels.map((model, idx) => {
+                        const isLast = idx === sortedModels.length - 1;
+                        return isLast ? (
+                          <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]}>
+                            <LabelList
+                              content={((props: any) => { const { x, y, width: w, index } = props;
+                                if (x == null || y == null || w == null || index == null) return null;
+                                const entry = dailyDataWithModels[index];
+                                if (!entry) return null;
+                                const total = dailyTotals[entry.date as string] ?? 0;
+                                if (total === 0) return null;
+                                return (
+                                  <text x={x + w / 2} y={y - 4} fontSize={10} fill="#71717a" textAnchor="middle">
+                                    {formatBarLabel(total)}
+                                  </text>
+                                );
+                              }) as any}
+                            />
+                          </Bar>
+                        ) : (
+                          <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]} />
+                        );
+                      })}
                       <Legend
                         iconType="circle"
                         layout="horizontal"
