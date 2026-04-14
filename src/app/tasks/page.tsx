@@ -173,6 +173,7 @@ function TasksPage() {
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [completedDays, setCompletedDays] = useState(7);
+  const [cancelledDays, setCancelledDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -240,22 +241,24 @@ function TasksPage() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const [allRes, completedRes] = await Promise.all([
+      const [allRes, completedRes, cancelledRes] = await Promise.all([
         fetch("/api/tasks"),
         fetch(`/api/tasks?status=completed&completedDays=${completedDays}`),
+        fetch(`/api/tasks?status=cancelled&cancelledDays=${cancelledDays}`),
       ]);
       const allData: Task[] = await allRes.json();
       const completedData: Task[] = await completedRes.json();
+      const cancelledData: Task[] = await cancelledRes.json();
 
-      // Merge: non-completed from all + completed from filtered query
-      const nonCompleted = allData.filter((t) => t.status !== "completed");
-      setTasks([...nonCompleted, ...completedData]);
+      // Merge: non-completed/non-cancelled from all + filtered completed + filtered cancelled
+      const nonTerminal = allData.filter((t) => t.status !== "completed" && t.status !== "cancelled");
+      setTasks([...nonTerminal, ...completedData, ...cancelledData]);
     } catch {
       setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [completedDays]);
+  }, [completedDays, cancelledDays]);
 
   useEffect(() => {
     fetchTasks();
@@ -338,6 +341,10 @@ function TasksPage() {
 
   const handleShowMore = () => {
     setCompletedDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
+  };
+
+  const handleShowMoreCancelled = () => {
+    setCancelledDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
   };
 
   const toggleGroup = (status: string) => {
@@ -590,6 +597,20 @@ function TasksPage() {
                           : "Show all"}
                       </button>
                     )}
+
+                    {/* Cancelled show more */}
+                    {status === "cancelled" && cancelledDays < 9999 && (
+                      <button
+                        onClick={handleShowMoreCancelled}
+                        className="px-3 py-2 text-xs text-center border-t border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg"
+                      >
+                        {cancelledDays === 7
+                          ? "Show 30 days"
+                          : cancelledDays === 30
+                          ? "Show 90 days"
+                          : "Show all"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -618,6 +639,22 @@ function TasksPage() {
                         columnTasks.map((task) => (
                           <TaskCard key={task.id} task={task} onClick={selectTask} />
                         ))
+                      )}
+                      {status === "completed" && completedDays < 9999 && (
+                        <button
+                          onClick={handleShowMore}
+                          className="w-full px-3 py-2 text-xs text-center text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded"
+                        >
+                          {completedDays === 7 ? "Show 30 days" : completedDays === 30 ? "Show 90 days" : "Show all"}
+                        </button>
+                      )}
+                      {status === "cancelled" && cancelledDays < 9999 && (
+                        <button
+                          onClick={handleShowMoreCancelled}
+                          className="w-full px-3 py-2 text-xs text-center text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded"
+                        >
+                          {cancelledDays === 7 ? "Show 30 days" : cancelledDays === 30 ? "Show 90 days" : "Show all"}
+                        </button>
                       )}
                     </div>
                   )}
