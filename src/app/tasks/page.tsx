@@ -47,6 +47,7 @@ const COLUMN_ORDER: TaskStatus[] = [
   "preview",
   "merged",
   "completed",
+  "cancelled",
 ];
 
 function timeSince(date: Date): string {
@@ -128,29 +129,6 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
   );
 }
 
-function Toggle({ label, enabled, onChange }: { label: string; enabled: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={enabled}
-        onClick={() => onChange(!enabled)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-          enabled ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
-        }`}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            enabled ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">{label}</span>
-    </div>
-  );
-}
-
 export default function TasksPageWrapper() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-zinc-400">Loading tasks...</div>}>
@@ -170,10 +148,6 @@ function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showCancelled, setShowCancelled] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [completedDays, setCompletedDays] = useState(7);
-  const [cancelledDays, setCancelledDays] = useState(7);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -183,6 +157,16 @@ function TasksPage() {
   const [projectSearchTerm, setProjectSearchTerm] = useState("");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const projectDropdownRef = useRef<HTMLDivElement>(null);
+  const [completedDays, setCompletedDays] = useState(7);
+  const [cancelledDays, setCancelledDays] = useState(7);
+
+  const handleShowMore = () => {
+    setCompletedDays(prev => prev === 7 ? 30 : prev === 30 ? 90 : 9999);
+  };
+
+  const handleShowMoreCancelled = () => {
+    setCancelledDays(prev => prev === 7 ? 30 : prev === 30 ? 90 : 9999);
+  };
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -241,24 +225,15 @@ function TasksPage() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const [allRes, completedRes, cancelledRes] = await Promise.all([
-        fetch("/api/tasks"),
-        fetch(`/api/tasks?status=completed&completedDays=${completedDays}`),
-        fetch(`/api/tasks?status=cancelled&cancelledDays=${cancelledDays}`),
-      ]);
-      const allData: Task[] = await allRes.json();
-      const completedData: Task[] = await completedRes.json();
-      const cancelledData: Task[] = await cancelledRes.json();
-
-      // Merge: non-completed/non-cancelled from all + filtered completed + filtered cancelled
-      const nonTerminal = allData.filter((t) => t.status !== "completed" && t.status !== "cancelled");
-      setTasks([...nonTerminal, ...completedData, ...cancelledData]);
+      const res = await fetch("/api/tasks");
+      const data: Task[] = await res.json();
+      setTasks(data);
     } catch {
       setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [completedDays, cancelledDays]);
+  }, []);
 
   useEffect(() => {
     fetchTasks();
@@ -306,7 +281,7 @@ function TasksPage() {
       initial[status] = (grouped[status]?.length || 0) > 0;
     }
     setExpandedGroups(initial);
-  }, [tasks, showCancelled, showCompleted]);
+  }, [tasks]);
 
   // Client-side search + project filter
   const filtered = tasks.filter((t) => {
@@ -323,7 +298,7 @@ function TasksPage() {
 
   // Group by status
   const grouped: Record<TaskStatus, Task[]> = {} as Record<TaskStatus, Task[]>;
-  for (const s of [...COLUMN_ORDER, "cancelled" as TaskStatus]) {
+  for (const s of COLUMN_ORDER) {
     grouped[s] = [];
   }
   for (const task of filtered) {
@@ -332,20 +307,7 @@ function TasksPage() {
     }
   }
 
-  const baseColumns = showCompleted
-    ? COLUMN_ORDER
-    : COLUMN_ORDER.filter((s) => s !== "completed");
-  const columns: TaskStatus[] = showCancelled
-    ? [...baseColumns, "cancelled"]
-    : baseColumns;
-
-  const handleShowMore = () => {
-    setCompletedDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
-  };
-
-  const handleShowMoreCancelled = () => {
-    setCancelledDays((prev) => (prev === 7 ? 30 : prev === 30 ? 90 : 9999));
-  };
+  const columns: TaskStatus[] = COLUMN_ORDER;
 
   const toggleGroup = (status: string) => {
     setExpandedGroups(prev => ({ ...prev, [status]: !prev[status] }));
@@ -524,23 +486,15 @@ function TasksPage() {
             </div>
           </div>
           
-          {/* Toggles + buttons */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-            {/* Toggle row — own row on mobile, inline on desktop */}
-            <div className="flex items-center gap-4">
-              <Toggle label="Show Completed" enabled={showCompleted} onChange={setShowCompleted} />
-              <Toggle label="Show Cancelled" enabled={showCancelled} onChange={setShowCancelled} />
-            </div>
-            {/* Button row */}
-            <div className="hidden md:flex items-center gap-2">
-              <button
-                onClick={() => setShowNewTask(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                <Plus size={16} />
-                New Task
-              </button>
-            </div>
+          {/* New Task button (desktop) */}
+          <div className="hidden md:flex items-center gap-2">
+            <button
+              onClick={() => setShowNewTask(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus size={16} />
+              New Task
+            </button>
           </div>
         </div>
       </div>
