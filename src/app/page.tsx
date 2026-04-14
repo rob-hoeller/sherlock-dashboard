@@ -6,7 +6,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList } from "recharts";
 
 interface UsageRow {
   summary_date: string;
@@ -128,6 +128,17 @@ export default function Home() {
     ...costs,
   })).sort((a, b) => a.date.localeCompare(b.date));
 
+  // Daily totals for bar labels
+  const dailyTotals: Record<string, number> = {};
+  for (const entry of dailyDataWithModels) {
+    const total = Object.entries(entry).reduce(
+      (sum, [key, val]) => (key === "date" ? sum : sum + (Number(val) || 0)),
+      0
+    );
+    dailyTotals[entry.date as string] = total;
+  }
+  const abbreviate = dailyDataWithModels.length > 14;
+
   const byModel: Record<string, number> = {};
   for (const e of data) {
     const label = e.model === "unknown" ? e.provider : e.model;
@@ -143,7 +154,7 @@ export default function Home() {
   const totalOutput = data.reduce((s, e) => s + metricValue(e, 'output'), 0);
 
   // Sort models by selected metric descending
-  const sortedModels = modelData.map(model => model.name).sort((a, b) => byModel[b] - byModel[a]);
+  const sortedModels = modelData.map(model => model.name).sort((a, b) => (byModel[b] || 0) - (byModel[a] || 0));
 
   const barChartTitle = {
     cost: "Daily Cost",
@@ -280,8 +291,41 @@ export default function Home() {
                         }}
                         formatter={tooltipFormatter}
                       />
-                      {sortedModels.map((model) => (
-                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]} />
+                      {sortedModels.map((model, idx) => (
+                        <Bar key={model} dataKey={model} stackId="metric" fill={modelColors[model] || "#71717a"} radius={[4, 4, 0, 0]}>
+                          {idx === sortedModels.length - 1 && (
+                            <LabelList
+                              content={((props: any) => { const { x, y, width, index } = props;
+                                if (x == null || y == null || width == null || index == null) return null;
+                                const entry = dailyDataWithModels[index];
+                                if (!entry) return null;
+                                const total = dailyTotals[entry.date as string] ?? 0;
+                                if (total === 0) return null;
+                                let label: string;
+                                if (selectedMetric === "cost") {
+                                  label = abbreviate
+                                    ? `$${total >= 1000 ? (total / 1000).toFixed(1) + "K" : total.toFixed(1)}`
+                                    : `$${total.toFixed(2)}`;
+                                } else if (selectedMetric === "calls") {
+                                  label = abbreviate ? fmt(total) : total.toLocaleString();
+                                } else {
+                                  label = fmt(total);
+                                }
+                                return (
+                                  <text
+                                    x={x + width / 2}
+                                    y={y - 6}
+                                    textAnchor="middle"
+                                    fontSize={10}
+                                    fill="#71717a"
+                                  >
+                                    {label}
+                                  </text>
+                                );
+                              }) as any}
+                            />
+                          )}
+                        </Bar>
                       ))}
                       <Legend
                         iconType="circle"
