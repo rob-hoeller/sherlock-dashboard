@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key } from "lucide-react";
+import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key, Inbox } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 export const nav = [
@@ -19,7 +19,23 @@ export function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/notifications/count');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count ?? 0);
+        }
+      } catch { /* ignore */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();

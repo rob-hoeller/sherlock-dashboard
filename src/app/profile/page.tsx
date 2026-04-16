@@ -12,6 +12,11 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState('')
+  const [emailEnabled, setEmailEnabled] = useState(false)
+  const [emailTaskUpdates, setEmailTaskUpdates] = useState(false)
+  const [emailDigest, setEmailDigest] = useState(false)
+  const [prefsLoading, setPrefsLoading] = useState(true)
+  const [prefsMessage, setPrefsMessage] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -26,6 +31,22 @@ export default function ProfilePage() {
     }
 
     fetchUser()
+
+    const fetchPrefs = async () => {
+      try {
+        const res = await fetch('/api/notifications/preferences')
+        if (res.ok) {
+          const data = await res.json()
+          const prefs = data.preferences ?? data
+          setEmailEnabled(prefs.email_enabled ?? false)
+          setEmailTaskUpdates(prefs.email_task_updates ?? false)
+          setEmailDigest(prefs.email_digest ?? false)
+        }
+      } catch { /* ignore */ } finally {
+        setPrefsLoading(false)
+      }
+    }
+    fetchPrefs()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
