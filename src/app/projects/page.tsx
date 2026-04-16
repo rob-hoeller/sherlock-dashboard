@@ -60,7 +60,7 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Projects</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">📁 Projects</h1>
         <button
           onClick={openCreateWizard}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"

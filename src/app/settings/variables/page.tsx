@@ -105,7 +105,7 @@ export default function VariablesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">🔐 Global Variables</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">🔐 Global Variables</h1>
           <p className="text-zinc-500 text-sm dark:text-zinc-400">
             Code factory configuration — stored encrypted in Supabase Vault
           </p>

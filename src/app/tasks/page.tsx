@@ -346,7 +346,7 @@ function TasksPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">📋 Tasks</h1>
           <button
             onClick={() => setShowNewTask(true)}
             className="flex md:hidden items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
