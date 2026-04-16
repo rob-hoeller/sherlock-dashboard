@@ -10,6 +10,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notifications";
+import TaskDetailPanel from "@/components/TaskDetailPanel";
 
 interface Notification {
   id: string;
@@ -137,6 +138,7 @@ export default function InboxPage() {
     }
   };
 
+  const [taskPanelId, setTaskPanelId] = useState<string | null>(null);
   const selectedNotification = notifications.find((n) => n.id === selected);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -328,7 +330,16 @@ export default function InboxPage() {
                         <MailOpen size={16} />
                       )}
                     </button>
-                    {selectedNotification.link_url && (
+                    {selectedNotification.task_id && (
+                      <button
+                        onClick={() => setTaskPanelId(selectedNotification.task_id)}
+                        className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                        title="Open task"
+                      >
+                        <ExternalLink size={16} />
+                      </button>
+                    )}
+                    {selectedNotification.link_url && !selectedNotification.task_id && (
                       <a
                         href={selectedNotification.link_url}
                         target={
@@ -350,21 +361,31 @@ export default function InboxPage() {
                   {selectedNotification.message}
                 </div>
 
-                {selectedNotification.link_url && (
+                {(selectedNotification.task_id || selectedNotification.link_url) && (
                   <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                    <a
-                      href={selectedNotification.link_url}
-                      target={
-                        selectedNotification.link_url.startsWith("http")
-                          ? "_blank"
-                          : undefined
-                      }
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                    >
-                      <ExternalLink size={14} />
-                      Open related item
-                    </a>
+                    {selectedNotification.task_id ? (
+                      <button
+                        onClick={() => setTaskPanelId(selectedNotification.task_id)}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                        Open task
+                      </button>
+                    ) : selectedNotification.link_url ? (
+                      <a
+                        href={selectedNotification.link_url}
+                        target={
+                          selectedNotification.link_url.startsWith("http")
+                            ? "_blank"
+                            : undefined
+                        }
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                        Open related item
+                      </a>
+                    ) : null}
                   </div>
                 )}
               </>
@@ -379,6 +400,11 @@ export default function InboxPage() {
           </div>
         </div>
       )}
+
+      <TaskDetailPanel
+        taskId={taskPanelId}
+        onClose={() => setTaskPanelId(null)}
+      />
     </div>
   );
 }
