@@ -39,13 +39,20 @@ export async function POST(
 
   // Create tasks from the breakdown
   const createdTasks: string[] = [];
+  const errors: string[] = [];
+
   for (const item of breakdown) {
+    // Map epic task type to DB-allowed task_type
+    // DB constraint allows: 'feature', 'bugfix', 'human'
+    // 'pipeline' maps to 'feature', 'human' stays 'human'
+    const dbTaskType = item.type === "human" ? "human" : "feature";
+
     const { data: task, error: taskError } = await supabaseAdmin
       .from("tasks")
       .insert({
         name: item.name,
         description: item.description,
-        task_type: item.type || "pipeline",
+        task_type: dbTaskType,
         status: "planning",
         project_id: epic.project_id,
         epic_id: id,
@@ -56,20 +63,25 @@ export async function POST(
 
     if (taskError) {
       console.error(`Failed to create task ${item.name}:`, taskError);
+      errors.push(`${item.name}: ${taskError.message}`);
       continue;
     }
 
     createdTasks.push(task.id);
 
-    // Create plan action ONLY for task #1 — the rest wait for auto-advance
-    if (item.order === 1 && item.type === "pipeline") {
-      await supabaseAdmin.from("task_actions").insert({
-        task_id: task.id,
-        action_type: "plan",
-        user_name: "epic_approval",
-        payload: { epic_id: id, auto_approved: true },
-        processed: false,
-      });
+    // Create plan action ONLY for task #1
+    // For human tasks, no plan action needed — user marks complete manually
+    // For pipeline tasks, kick off the planner
+    if (item.order === 1) {
+      if (item.type !== "human") {
+        await supabaseAdmin.from("task_actions").insert({
+          task_id: task.id,
+          action_type: "plan",
+          user_name: "epic_approval",
+          payload: { epic_id: id, auto_approved: true },
+          processed: false,
+        });
+      }
     }
 
     // Insert initial history
@@ -92,8 +104,9 @@ export async function POST(
     .eq("id", id);
 
   return NextResponse.json({
-    ok: true,
+    ok: createdTasks.length > 0,
     epic_status: "in_progress",
     tasks_created: createdTasks.length,
+    errors: errors.length > 0 ? errors : undefined,
   });
 }
