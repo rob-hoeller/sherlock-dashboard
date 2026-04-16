@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from("notifications")
     .select("*")
+    .order("is_read", { ascending: true })
     .order("created_at", { ascending: false })
     .limit(limit);
 
