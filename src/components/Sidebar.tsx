@@ -113,6 +113,26 @@ export function Sidebar() {
             );
           })}
         </nav>
+        <div className="px-2 pb-2">
+          <Link
+            href="/inbox"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              path.startsWith("/inbox")
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <span className="relative">
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 text-[10px] font-bold text-white bg-amber-500 rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </span>
+            <span className="text-sm">Inbox</span>
+          </Link>
+        </div>
         <div
           ref={dropdownRef}
           className="p-3 sm:p-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between cursor-pointer"
