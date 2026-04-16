@@ -62,7 +62,7 @@ export default function EpicsPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
         >
           <Plus size={16} />
           New Epic
@@ -76,8 +76,8 @@ export default function EpicsPage() {
           role="switch"
           aria-checked={hideCancelled}
           onClick={() => setHideCancelled(!hideCancelled)}
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-            hideCancelled ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+            hideCancelled ? "bg-blue-600" : "bg-zinc-300 dark:bg-zinc-600"
           }`}
         >
           <span
@@ -106,62 +106,114 @@ export default function EpicsPage() {
           <p className="mt-4 text-sm">{epics.length} cancelled epic{epics.length !== 1 ? "s" : ""} hidden</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((epic) => {
-            const progress = epic.task_progress;
-            const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-zinc-500 dark:text-zinc-400">
+                  <th className="pb-3 font-medium">Epic</th>
+                  <th className="pb-3 font-medium">Project</th>
+                  <th className="pb-3 font-medium">Status</th>
+                  <th className="pb-3 font-medium">Progress</th>
+                  <th className="pb-3 font-medium">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((epic) => {
+                  const progress = epic.task_progress;
+                  const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+                  return (
+                    <tr
+                      key={epic.id}
+                      onClick={() => setSelectedId(epic.id)}
+                      className="border-b border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    >
+                      <td className="py-3 font-medium text-zinc-900 dark:text-zinc-100">{epic.name}</td>
+                      <td className="py-3 text-zinc-500 dark:text-zinc-400">{epic.project?.name || "—"}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[epic.status] || STATUS_BADGE.planning}`}>
+                          {STATUS_LABEL[epic.status] || epic.status}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        {progress.total > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-xs text-zinc-500">{progress.completed}/{progress.total}</span>
+                          </div>
+                        ) : (
+                          <span className="text-zinc-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 text-zinc-500 dark:text-zinc-400">{new Date(epic.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-            return (
-              <button
-                key={epic.id}
-                onClick={() => setSelectedId(epic.id)}
-                className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 text-left hover:border-amber-400 dark:hover:border-amber-600 transition-colors group"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                    {epic.name}
-                  </h3>
-                  <ChevronRight size={16} className="text-zinc-400 shrink-0 mt-0.5" />
-                </div>
+          {/* Mobile cards */}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:hidden">
+            {filtered.map((epic) => {
+              const progress = epic.task_progress;
+              const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
-                {epic.project && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
-                    {epic.project.name}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                      STATUS_BADGE[epic.status] || STATUS_BADGE.planning
-                    }`}
-                  >
-                    {STATUS_LABEL[epic.status] || epic.status}
-                  </span>
-                </div>
-
-                {progress.total > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
-                      <span>{progress.completed}/{progress.total} tasks</span>
-                      <span>{pct}%</span>
-                    </div>
-                    <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-amber-500 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+              return (
+                <button
+                  key={epic.id}
+                  onClick={() => setSelectedId(epic.id)}
+                  className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 text-left hover:border-blue-400 dark:hover:border-blue-600 transition-colors group"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {epic.name}
+                    </h3>
+                    <ChevronRight size={16} className="text-zinc-400 shrink-0 mt-0.5" />
                   </div>
-                )}
 
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-2">
-                  {new Date(epic.created_at).toLocaleDateString()}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+                  {epic.project && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">
+                      {epic.project.name}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        STATUS_BADGE[epic.status] || STATUS_BADGE.planning
+                      }`}
+                    >
+                      {STATUS_LABEL[epic.status] || epic.status}
+                    </span>
+                  </div>
+
+                  {progress.total > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
+                        <span>{progress.completed}/{progress.total} tasks</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 rounded-full transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-2">
+                    {new Date(epic.created_at).toLocaleDateString()}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <EpicDetailPanel
