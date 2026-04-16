@@ -32,6 +32,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => clearInterval(interval);
   }, [refresh]);
 
+  // Update browser tab title with unread count
+  useEffect(() => {
+    const baseTitle = "Sherlock Dashboard";
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
+  }, [unreadCount]);
+
   return (
     <NotificationContext.Provider value={{ unreadCount, refresh }}>
       {children}
