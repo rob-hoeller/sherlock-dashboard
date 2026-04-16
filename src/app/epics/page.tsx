@@ -60,25 +60,35 @@ export default function EpicsPage() {
             Break big features into sequential tasks
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setHideCancelled(!hideCancelled)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-              hideCancelled
-                ? "border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                : "border-neutral-400 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
+        >
+          <Plus size={16} />
+          New Epic
+        </button>
+      </div>
+
+      {/* Hide Cancelled Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={hideCancelled}
+          onClick={() => setHideCancelled(!hideCancelled)}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+            hideCancelled ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              hideCancelled ? "translate-x-5" : "translate-x-0"
             }`}
-          >
-            {hideCancelled ? "Show Cancelled" : "Hide Cancelled"}
-          </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
-          >
-            <Plus size={16} />
-            New Epic
-          </button>
-        </div>
+          />
+        </button>
+        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          Hide cancelled epics
+        </span>
       </div>
 
       {loading ? (
