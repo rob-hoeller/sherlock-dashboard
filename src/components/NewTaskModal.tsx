@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { X, Paperclip, Plus } from "lucide-react";
+import DragDropZone from "@/components/DragDropZone";
 
 interface NewTaskModalProps {
   open: boolean;
@@ -30,7 +31,6 @@ export default function NewTaskModal({ open, onClose, onCreated, defaultProjectI
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const projectDropdownRef = useRef<HTMLDivElement>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -74,11 +74,8 @@ export default function NewTaskModal({ open, onClose, onCreated, defaultProjectI
     };
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files;
-    if (!selected) return;
-
-    Array.from(selected).forEach((file) => {
+  const handleFiles = (fileList: FileList) => {
+    Array.from(fileList).forEach((file) => {
       const reader = new FileReader();
 
       if (file.type.startsWith("image/") || file.type === "application/pdf") {
@@ -103,9 +100,6 @@ export default function NewTaskModal({ open, onClose, onCreated, defaultProjectI
         reader.readAsText(file);
       }
     });
-
-    // Reset input so the same file can be re-selected
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeFile = (index: number) => {
@@ -323,26 +317,21 @@ export default function NewTaskModal({ open, onClose, onCreated, defaultProjectI
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               Attachments
             </label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
-            >
-              <Paperclip className="mx-auto mb-2 text-zinc-400" size={24} />
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Click to browse files
-              </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                Images, markdown, text, PDF
-              </p>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
+            <DragDropZone
+              onFiles={handleFiles}
               multiple
               accept="image/*,.md,.txt,.pdf,text/markdown,text/plain,application/pdf"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            >
+              <div className="p-6">
+                <Paperclip className="mx-auto mb-2 text-zinc-400" size={24} />
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Click to browse or drag files here
+                </p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                  Images, markdown, text, PDF
+                </p>
+              </div>
+            </DragDropZone>
 
             {/* Attached files list */}
             {files.length > 0 && (
