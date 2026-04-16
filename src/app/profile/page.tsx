@@ -77,10 +77,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Profile</h1>
+    <div className="max-w-lg mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">👤 Profile</h1>
 
-      <form className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 space-y-6" autoComplete="off">
+      <form className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6" autoComplete="off">
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Email
