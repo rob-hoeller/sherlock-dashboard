@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Key, Eye, EyeOff, Plus, Pencil, Trash2, Search } from "lucide-react";
 import VariableModal from "@/components/VariableModal";
 
@@ -31,6 +31,17 @@ export default function VariablesPage() {
   const [revealedValues, setRevealedValues] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVar, setEditingVar] = useState<Variable | null>(null);
+
+  const availableCategories = useMemo(() => {
+    const cats = [...new Set(variables.map((v) => v.category))];
+    return ["all", ...cats];
+  }, [variables]);
+
+  useEffect(() => {
+    if (filter !== "all" && !availableCategories.includes(filter)) {
+      setFilter("all");
+    }
+  }, [availableCategories, filter]);
 
   const fetchVariables = async () => {
     setLoading(true);
@@ -110,7 +121,7 @@ export default function VariablesPage() {
 
       {/* Category filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {CATEGORIES.map((cat) => (
+        {availableCategories.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}

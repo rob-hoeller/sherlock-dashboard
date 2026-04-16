@@ -1,0 +1,8 @@
+{
+  "model": "Qwen/Qwen3-Coder-Next-FP8",
+  "api_calls": 2,
+  "prompt_tokens": 6420,
+  "completion_tokens": 597,
+  "total_tokens": 7017,
+  "timestamp": "2026-04-16T12:46:01Z"
+}
