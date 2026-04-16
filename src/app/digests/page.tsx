@@ -119,7 +119,7 @@ export default function DigestsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">📋 Daily Digests</h1>
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">📋 Daily Digests</h1>
       <p className="text-zinc-500 text-sm dark:text-zinc-400">{digests.length} digests available</p>
 
       <div className="relative mb-4">
