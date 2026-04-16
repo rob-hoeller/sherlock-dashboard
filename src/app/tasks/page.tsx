@@ -80,6 +80,19 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
         </p>
       )}
 
+      {task.epic && (
+        <div className="mt-1 flex items-center gap-1.5">
+          <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-medium truncate max-w-[180px]">
+            🎯 {task.epic.name}
+          </span>
+          {task.epic_order != null && (
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">
+              #{task.epic_order}
+            </span>
+          )}
+        </div>
+      )}
+
       {task.branch_name && (
         <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">
           {task.branch_name}
