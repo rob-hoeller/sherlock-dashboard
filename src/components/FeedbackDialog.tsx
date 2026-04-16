@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { X, Paperclip } from "lucide-react";
+import DragDropZone from "@/components/DragDropZone";
 
 export interface FeedbackFile {
   name: string;
@@ -33,7 +34,6 @@ export default function FeedbackDialog({
   const [feedback, setFeedback] = useState("");
   const [files, setFiles] = useState<FeedbackFile[]>([]);
   const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
@@ -48,11 +48,8 @@ export default function FeedbackDialog({
     onClose();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files;
-    if (!selected) return;
-
-    Array.from(selected).forEach((file) => {
+  const handleFiles = (fileList: FileList) => {
+    Array.from(fileList).forEach((file) => {
       const reader = new FileReader();
 
       if (file.type.startsWith("image/") || file.type === "application/pdf") {
@@ -77,8 +74,6 @@ export default function FeedbackDialog({
         reader.readAsText(file);
       }
     });
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeFile = (index: number) => {
@@ -128,21 +123,16 @@ export default function FeedbackDialog({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Attachments
               </label>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
-              >
-                <Paperclip className="mx-auto mb-1 text-zinc-400" size={20} />
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Click to browse files</p>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
+              <DragDropZone
+                onFiles={handleFiles}
                 multiple
                 accept="image/*,.md,.txt,.pdf,text/markdown,text/plain,application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+              >
+                <div className="p-4">
+                  <Paperclip className="mx-auto mb-1 text-zinc-400" size={20} />
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Click to browse or drag files here</p>
+                </div>
+              </DragDropZone>
 
               {files.length > 0 && (
                 <div className="mt-3 space-y-2">
