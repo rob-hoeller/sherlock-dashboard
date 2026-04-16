@@ -11,7 +11,7 @@ export type TaskStatus =
   | "completed"
   | "cancelled";
 
-export type TaskType = "feature" | "bugfix";
+export type TaskType = "feature" | "bugfix" | "human";
 export type DocType = "planning" | "spec" | "report";
 
 export interface Task {
@@ -32,7 +32,10 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   project_id: string;
+  epic_id: string | null;
+  epic_order: number | null;
   project?: { id: string; name: string; color: string | null } | null;
+  epic?: { id: string; name: string } | null;
 }
 
 export interface TaskDocument {
