@@ -80,6 +80,19 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
         </p>
       )}
 
+      {task.epic && (
+        <div className="mt-1 flex items-center gap-1.5">
+          <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-medium truncate max-w-[180px]">
+            🎯 {task.epic.name}
+          </span>
+          {task.epic_order != null && (
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">
+              #{task.epic_order}
+            </span>
+          )}
+        </div>
+      )}
+
       {task.branch_name && (
         <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">
           {task.branch_name}
@@ -114,7 +127,9 @@ function TaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void
       <div className="mt-2 flex items-center justify-between gap-2">
         <span
           className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-            task.task_type === "feature"
+            task.task_type === "human"
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+              : task.task_type === "feature"
               ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
               : "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
           }`}
@@ -306,6 +321,18 @@ function TasksPage() {
     if (grouped[task.status]) {
       grouped[task.status].push(task);
     }
+  }
+
+  // Sort within each group: epic tasks by epic_order first, then non-epic by created_at desc
+  for (const status of COLUMN_ORDER) {
+    grouped[status].sort((a, b) => {
+      // Epic tasks come first, sorted by epic_order
+      if (a.epic_id && b.epic_id) return (a.epic_order || 0) - (b.epic_order || 0);
+      if (a.epic_id && !b.epic_id) return -1;
+      if (!a.epic_id && b.epic_id) return 1;
+      // Non-epic: most recent first
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }
 
   const columns: TaskStatus[] = COLUMN_ORDER;

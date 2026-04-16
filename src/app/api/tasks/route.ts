@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from("tasks")
-    .select("*,project:projects!project_id(id,name,color)")
+    .select("*,project:projects!project_id(id,name,color),epic:epics!epic_id(id,name)")
     .order("created_at", { ascending: false });
 
   if (status) {
