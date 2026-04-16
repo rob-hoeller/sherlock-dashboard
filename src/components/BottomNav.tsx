@@ -1,33 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { nav } from "@/components/Sidebar";
+import { useNotifications } from "@/lib/notifications";
 
 const mobileNav = [...nav, { href: "/inbox", label: "Inbox", icon: Bell }];
 
 export default function BottomNav() {
   const path = usePathname();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const loadUnread = async () => {
-      try {
-        const res = await fetch("/api/notifications/count");
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count || 0);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    loadUnread();
-    const interval = setInterval(loadUnread, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const { unreadCount } = useNotifications();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 md:hidden">

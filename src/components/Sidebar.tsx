@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key, Bell } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import { useNotifications } from "@/lib/notifications";
 
 export const nav = [
   { href: "/", label: "Mission Control", icon: Rocket },
@@ -67,24 +68,7 @@ export function Sidebar() {
     router.push("/login");
   };
 
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const loadUnread = async () => {
-      try {
-        const res = await fetch("/api/notifications/count");
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count || 0);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    loadUnread();
-    const interval = setInterval(loadUnread, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const { unreadCount } = useNotifications();
 
   return (
     <>
