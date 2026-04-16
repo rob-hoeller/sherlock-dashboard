@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key } from "lucide-react";
+import { BarChart3, FileText, ScrollText, ClipboardList, User, LogOut, FolderKanban, Rocket, Key, Bell } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 export const nav = [
@@ -66,6 +66,25 @@ export function Sidebar() {
     await supabase.auth.signOut();
     router.push("/login");
   };
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadUnread = async () => {
+      try {
+        const res = await fetch("/api/notifications/count");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count || 0);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadUnread();
+    const interval = setInterval(loadUnread, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
