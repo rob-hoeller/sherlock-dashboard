@@ -35,6 +35,7 @@ export default function EpicsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [hideCancelled, setHideCancelled] = useState(true);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/epics");
@@ -48,6 +49,8 @@ export default function EpicsPage() {
     load();
   }, [load]);
 
+  const filtered = hideCancelled ? epics.filter(e => e.status !== "cancelled") : epics;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -57,13 +60,25 @@ export default function EpicsPage() {
             Break big features into sequential tasks
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
-        >
-          <Plus size={16} />
-          New Epic
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setHideCancelled(!hideCancelled)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+              hideCancelled
+                ? "border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                : "border-neutral-400 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
+            }`}
+          >
+            {hideCancelled ? "Show Cancelled" : "Hide Cancelled"}
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
+          >
+            <Plus size={16} />
+            New Epic
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -75,9 +90,14 @@ export default function EpicsPage() {
           <Target size={48} strokeWidth={1} />
           <p className="mt-4 text-sm">No epics yet. Create one to get started.</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-zinc-400 dark:text-zinc-600">
+          <Target size={48} strokeWidth={1} />
+          <p className="mt-4 text-sm">{epics.length} cancelled epic{epics.length !== 1 ? "s" : ""} hidden</p>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {epics.map((epic) => {
+          {filtered.map((epic) => {
             const progress = epic.task_progress;
             const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
