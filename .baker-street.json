@@ -1,5 +1,5 @@
 {
-  "model": "Qwen/Qwen3-Coder-Next-FP8",
+  "model": "Qwen/Qwen3.6-35B-A3B-FP8",
   "max_retries": 5,
   "timeout": 600,
   "locked_files": [
