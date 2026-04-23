@@ -380,6 +380,17 @@ export default function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProp
                 >
                   {detail.task_type}
                 </span>
+                {detail.pr_number && detail.pr_url && (
+                  <a
+                    href={detail.pr_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 hover:underline"
+                  >
+                    PR #{detail.pr_number}
+                    <ExternalLink size={12} />
+                  </a>
+                )}
               </div>
 
               {/* Description */}
